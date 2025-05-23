@@ -1,0 +1,77 @@
+name: citoyen_app
+description: "A new Flutter project."
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.6 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any # For localization
+
+  # UI & Animations
+  cupertino_icons: ^1.0.2
+  google_fonts: ^6.1.0 # For custom fonts
+  flutter_animate: ^4.5.2 # For beautiful animations
+  lottie: ^3.0.0 # For Lottie animations (e.g., splash, loading)
+
+  # State Management
+  flutter_riverpod: ^2.4.9
+  riverpod_annotation: ^2.3.3
+
+  # Networking
+  http: ^1.4.0
+  dio: ^5.4.0 # Alternative HTTP client
+
+  # Utility
+  shared_preferences: ^2.5.3 # For simple data persistence
+  flutter_svg: ^2.0.9 # For SVG images
+  image_picker: ^1.0.7 # For picking images
+  flutter_secure_storage: ^9.2.4
+  dropdown_search: ^6.0.2
+  provider: ^6.1.5
+  google_maps_flutter: ^2.12.2
+  geolocator: ^14.0.0
+  permission_handler: ^12.0.0+1
+  timeline_tile: ^2.0.0
+  flutter_map: ^8.1.1
+  latlong2: ^0.9.1
+  # geolocator: ^12.0.0 # For location services, if needed directly in Flutter
+  # flutter_map: ^6.1.0 # For map display, if not using native views
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.7
+  riverpod_generator: ^2.3.9
+  riverpod_lint: ^2.3.7
+  custom_lint: ^0.6.4
+
+flutter:
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  assets:
+    - assets/animations/
+    - assets/images/
+    - assets/icons/
+
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+
