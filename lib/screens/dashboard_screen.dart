@@ -10,10 +10,11 @@ import 'package:citoyen_app/screens/complaint/complaint_list_screen.dart';
 import 'package:citoyen_app/providers/dashboard_provider.dart';
 import 'notifications_screen.dart';
 import 'package:citoyen_app/screens/problem/problem_list_screen.dart';
-import 'package:citoyen_app/screens/problem/report_problem_screen.dart';
+import 'package:citoyen_app/screens/problem/report_problem_details_screen.dart';
 import 'package:citoyen_app/screens/profile/profile_screen.dart';
 import 'package:citoyen_app/screens/dashboard_home_tab.dart';
 import 'package:provider/provider.dart'; // Import Provider
+import 'problem/category_selection_screen.dart';
 
 
 class DashboardScreen extends StatefulWidget {
@@ -74,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ? FloatingActionButton.extended(
           onPressed: () {
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const ReportProblemScreen()), // Placeholder
+              MaterialPageRoute(builder: (context) =>  CategorySelectionScreen()), // Placeholder
             );
           },
           backgroundColor: colors.primary,

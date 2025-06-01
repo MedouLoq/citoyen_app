@@ -1,3 +1,6 @@
+// ============================================================================
+// 1. UPDATED REGISTER SCREEN
+// ============================================================================
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -7,10 +10,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:citoyen_app/widgets/custom_text_field.dart';
 import '../verification_screen_api.dart';
-import 'package:dropdown_search/dropdown_search.dart'; // Import dropdown_search
+import 'package:dropdown_search/dropdown_search.dart';
 import 'dart:async';
-final String baseUrl = "http://10.0.2.2:8000/api";
 
+final String baseUrl = "http://10.0.2.2:8000/api";
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -27,7 +30,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
-  String? _selectedMunicipalityId; // Store Municipality ID
+  String? _selectedMunicipalityId;
+  String _selectedLanguage = 'ar'; // Default to Arabic for Mauritania
 
   @override
   void dispose() {
@@ -66,49 +70,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
             'full_name': _fullNameController.text,
             'phone_number': _phoneController.text,
             'nni': _nniController.text,
-            'municipality': _selectedMunicipalityId, // Send selected Municipality ID
+            'municipality': _selectedMunicipalityId,
             'password': _passwordController.text,
             'password_confirm': _confirmPasswordController.text,
           }),
         )
             .timeout(const Duration(seconds: 30));
 
-     final phoneNumber =    _phoneController.text;
-    if (response.statusCode == 201) { // Assuming 201 means user created
+     final phoneNumber = _phoneController.text;
+     
+    if (response.statusCode == 201) {
       final responseData = jsonDecode(response.body);
       
-      // final token = responseData['token']; // If your registration returns a token
-      // await _storeToken(token); // Store token if needed
-
-      // *** IMPORTANT: Call send verification code API ***
-      bool codeSent = await _sendVerificationCode(phoneNumber);
+      // *** UPDATED: Send verification code with language preference ***
+      bool codeSent = await _sendVerificationCode(phoneNumber, _selectedLanguage);
 
       if (codeSent && mounted) {
-        // Navigate to VerificationScreen ONLY if the code was sent successfully
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Inscription réussie! Code de vérification envoyé.')),
+          SnackBar(
+            content: Text(_selectedLanguage == 'ar' 
+              ? 'تم إنشاء الحساب بنجاح! تم إرسال رمز التحقق.'
+              : 'Inscription réussie! Code de vérification envoyé.')
+          ),
         );
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => VerificationScreen(phoneNumber: phoneNumber)),
+          MaterialPageRoute(
+            builder: (context) => VerificationScreen(
+              phoneNumber: phoneNumber,
+              language: _selectedLanguage, // Pass language preference
+            )
+          ),
         );
       } else if (mounted) {
-        // Handle case where sending the code failed
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Inscription réussie, mais échec de l\'envoi du code. Veuillez réessayer ou contacter le support.')),
+          SnackBar(
+            content: Text(_selectedLanguage == 'ar' 
+              ? 'تم إنشاء الحساب، لكن فشل في إرسال الرمز. يرجى المحاولة مرة أخرى.'
+              : 'Inscription réussie, mais échec de l\'envoi du code. Veuillez réessayer.')
+          ),
         );
-        // Decide what to do here - maybe stay on registration page or go to login?
       }
     } else {
-          String errorMessage = 'Erreur d\'inscription';
+          String errorMessage = _selectedLanguage == 'ar' 
+            ? 'خطأ في التسجيل' 
+            : 'Erreur d\'inscription';
           if (response.statusCode == 400) {
             final responseData = jsonDecode(response.body);
             if (responseData.containsKey('errors')) {
-              errorMessage = 'Veuillez corriger les erreurs';
+              errorMessage = _selectedLanguage == 'ar' 
+                ? 'يرجى تصحيح الأخطاء' 
+                : 'Veuillez corriger les erreurs';
             }
           } else {
-            errorMessage = 'Erreur d\'inscription. Code: ${response.statusCode}';
+            errorMessage = _selectedLanguage == 'ar' 
+              ? 'خطأ في التسجيل. الرمز: ${response.statusCode}'
+              : 'Erreur d\'inscription. Code: ${response.statusCode}';
           }
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -117,15 +133,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
           }
         }
       } catch (error) {
-        String errorMessage = 'Erreur d\'inscription. Veuillez vérifier votre connexion Internet.';
+        String errorMessage = _selectedLanguage == 'ar' 
+          ? 'خطأ في التسجيل. يرجى التحقق من اتصال الإنترنت.'
+          : 'Erreur d\'inscription. Veuillez vérifier votre connexion Internet.';
         if (error is FormatException) {
-          errorMessage = 'Erreur de format de réponse du serveur';
+          errorMessage = _selectedLanguage == 'ar' 
+            ? 'خطأ في تنسيق استجابة الخادم'
+            : 'Erreur de format de réponse du serveur';
         }
         else if (error is http.ClientException) {
-          errorMessage = 'Erreur lors de la communication avec le serveur';
+          errorMessage = _selectedLanguage == 'ar' 
+            ? 'خطأ في التواصل مع الخادم'
+            : 'Erreur lors de la communication avec le serveur';
         }
         else if (error is TimeoutException){
-          errorMessage = "Délai d'attente dépassé. Veuillez vérifier votre connexion.";
+          errorMessage = _selectedLanguage == 'ar' 
+            ? 'انتهت مهلة الانتظار. يرجى التحقق من الاتصال.'
+            : "Délai d'attente dépassé. Veuillez vérifier votre connexion.";
         }
         print('Error during registration: $error');
         if (mounted) {
@@ -139,7 +163,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
       }
     } else {
-      String errorMessage = 'Veuillez sélectionner la municipalité de resudance'; // Show error for unselected municipality
+      String errorMessage = _selectedLanguage == 'ar' 
+        ? 'يرجى اختيار البلدية'
+        : 'Veuillez sélectionner la municipalité de résidence';
       if (_selectedMunicipalityId == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),
@@ -158,13 +184,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
-        title: Text('Créer un compte', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+        title: Text(
+          _selectedLanguage == 'ar' ? 'إنشاء حساب' : 'Créer un compte', 
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600)
+        ),
         backgroundColor: colors.background,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, color: colors.primary),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          // Language toggle button
+          IconButton(
+            icon: Text(
+              _selectedLanguage == 'ar' ? 'FR' : 'AR',
+              style: TextStyle(
+                color: colors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onPressed: () {
+              setState(() {
+                _selectedLanguage = _selectedLanguage == 'ar' ? 'fr' : 'ar';
+              });
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(
@@ -177,7 +223,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Rejoignez-nous',
+                    _selectedLanguage == 'ar' ? 'انضم إلينا' : 'Rejoignez-nous',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 28,
@@ -187,7 +233,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Créez votre compte pour commencer',
+                    _selectedLanguage == 'ar' 
+                      ? 'أنشئ حسابك للبدء' 
+                      : 'Créez votre compte pour commencer',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 16,
@@ -195,55 +243,77 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(height: 40),
+                  
+                  // Rest of your form fields remain the same...
                   CustomTextField(
                     controller: _fullNameController,
-                    labelText: 'Nom complet',
-                    hintText: 'Entrez votre nom complet',
+                    labelText: _selectedLanguage == 'ar' ? 'الاسم الكامل' : 'Nom complet',
+                    hintText: _selectedLanguage == 'ar' ? 'أدخل اسمك الكامل' : 'Entrez votre nom complet',
                     prefixIcon: Icons.person_outline,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Veuillez entrer votre nom complet';
+                        return _selectedLanguage == 'ar' 
+                          ? 'يرجى إدخال اسمك الكامل'
+                          : 'Veuillez entrer votre nom complet';
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: 20),
+                  
+                  // Phone number field with updated validation message
                   CustomTextField(
                     controller: _phoneController,
-                    labelText: 'Numéro de téléphone',
-                    hintText: 'Entrez votre numéro de téléphone',
+                    labelText: _selectedLanguage == 'ar' ? 'رقم الهاتف' : 'Numéro de téléphone',
+                    hintText: _selectedLanguage == 'ar' ? 'أدخل رقم هاتفك' : 'Entrez votre numéro de téléphone',
                     prefixIcon: Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Veuillez entrer votre numéro de téléphone';
+                        return _selectedLanguage == 'ar' 
+                          ? 'يرجى إدخال رقم هاتفك'
+                          : 'Veuillez entrer votre numéro de téléphone';
                       }
-                      final phoneRegExp = RegExp(r'^\d{8}$');
-    if (!phoneRegExp.hasMatch(value)) {
-      return 'Le numéro doit contenir exactement 8 chiffres';
-    }
+                      // Updated validation for Chinguisoft requirements
+                      final phoneRegExp = RegExp(r'^[234]\d{7}$');
+                      if (!phoneRegExp.hasMatch(value)) {
+                        return _selectedLanguage == 'ar' 
+                          ? 'يجب أن يبدأ الرقم بـ 2 أو 3 أو 4 ويحتوي على 8 أرقام'
+                          : 'Le numéro doit commencer par 2, 3 ou 4 et contenir 8 chiffres';
+                      }
                       return null;
                     },
                   ),
+                  
+                  // Continue with the rest of your existing form fields...
+                  // (NNI, Municipality dropdown, Password fields)
+                  // Just update the text labels based on _selectedLanguage
+                  
                   const SizedBox(height: 20),
                   CustomTextField(
                     controller: _nniController,
-                    labelText: 'NNI',
-                    hintText: 'Entrez votre NNI',
+                    labelText: _selectedLanguage == 'ar' ? 'رقم البطاقة الوطنية' : 'NNI',
+                    hintText: _selectedLanguage == 'ar' ? 'أدخل رقم بطاقتك الوطنية' : 'Entrez votre NNI',
                     prefixIcon: Icons.credit_card,
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Veuillez entrer votre NNI';
+                        return _selectedLanguage == 'ar' 
+                          ? 'يرجى إدخال رقم البطاقة الوطنية'
+                          : 'Veuillez entrer votre NNI';
                       }
                        final phoneRegExp = RegExp(r'^\d{10}$');
-    if (!phoneRegExp.hasMatch(value)) {
-      return 'La NNI doit contenir exactement 10 chiffres';
-    }
+                      if (!phoneRegExp.hasMatch(value)) {
+                        return _selectedLanguage == 'ar' 
+                          ? 'يجب أن يحتوي رقم البطاقة على 10 أرقام بالضبط'
+                          : 'La NNI doit contenir exactement 10 chiffres';
+                      }
                       return null;
                     },
                   ),
-                  const SizedBox(height: 20),
+                  
+                 const SizedBox(height: 20),
+                 
                   // Municipality Dropdown
                 DropdownSearch<Map<String, dynamic>>(
   // —————————————————————————————
@@ -416,6 +486,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return null;
                     },
                   ),
+                
                   const SizedBox(height: 30),
                   _isLoading
                       ? Center(
@@ -430,31 +501,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Text('S\'inscrire',
-                        style: GoogleFonts.inter(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Déjà un compte?',
-                        style: GoogleFonts.inter(
-                            color: colors.onBackground.withOpacity(0.7)),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(); // Go back to LoginScreen
-                        },
-                        child: Text(
-                          'Se connecter',
-                          style: GoogleFonts.inter(
-                              color: colors.primary,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
+                    child: Text(
+                      _selectedLanguage == 'ar' ? 'التسجيل' : 'S\'inscrire',
+                      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold)
+                    ),
                   ),
                 ],
               ),
@@ -464,58 +514,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-  // Corrected _customPopupItemBuilder
-  Widget _customPopupItemBuilder(
-      BuildContext context,
-      Map<String, dynamic> item,
-      bool isSelected,
-      bool isHighlighted // Added isHighlighted
-      ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: !isSelected
-          ? null
-          : BoxDecoration(
-        border: Border.all(color: Theme.of(context).primaryColor),
-        borderRadius: BorderRadius.circular(5),
-        color: Colors.white,
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Text(
-        item['name'] ?? '', // Display name
-        style: const TextStyle(fontSize: 16),
-      ),
-    );
-  }
 }
-// --- Helper function to call the send-verification-code endpoint ---
-Future<bool> _sendVerificationCode(String phoneNumber) async {
-  // Consider showing a brief loading indicator here if needed
-  print('Attempting to send verification code to $phoneNumber...');
+
+// *** UPDATED: Helper function with language support ***
+Future<bool> _sendVerificationCode(String phoneNumber, String language) async {
+  print('Attempting to send verification code to $phoneNumber in $language...');
   try {
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:8000/api/send-code/'), // Use the correct endpoint from your Django app
+      Uri.parse('http://10.0.2.2:8000/api/send-code/'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
-        // Add Authorization header if this endpoint requires authentication
-        // 'Authorization': 'Bearer YOUR_TOKEN', 
       },
       body: jsonEncode(<String, String>{
         'phone_number': phoneNumber,
+        'language': language, // Pass language preference to backend
       }),
     );
 
     if (response.statusCode == 200) {
-      print('Verification code sent successfully via API.');
-      return true; // Indicate success
+      print('Verification code sent successfully via Chinguisoft API.');
+      return true;
     } else {
-      // Log error details from backend if available
       final responseBody = jsonDecode(response.body);
       print('Failed to send verification code. Status: ${response.statusCode}, Body: ${response.body}');
-      return false; // Indicate failure
+      return false;
     }
   } catch (e) {
     print('Exception caught sending verification code: $e');
-    return false; // Indicate failure due to exception
+    return false;
   }
 }

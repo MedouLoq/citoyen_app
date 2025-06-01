@@ -3,14 +3,17 @@ import 'package:provider/provider.dart'; // Only provider, not Riverpod
 import 'package:citoyen_app/screens/splash_screen.dart'; // Will be created next
 
 import 'package:citoyen_app/providers/dashboard_provider.dart'; // Import your provider
-
+import 'package:intl/date_symbol_data_local.dart';
 import 'screens/problem/problem_list_screen.dart';
 import 'screens/problem/report_problem_screen.dart';
+import 'screens/problem/category_selection_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'providers/problem_provider.dart';
 import 'providers/notification_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting();
   runApp(
     MultiProvider(
       providers: [
@@ -36,7 +39,7 @@ class MyApp extends StatelessWidget {
       // In your main.dart or routes configuration
 routes: {
   '/problem_list': (context) => ProblemListScreen(),
-  '/report_problem': (context) => ReportProblemScreen(),
+  '/report_problem': (context) => CategorySelectionScreen(),
   // Add other routes as needed
 },
 
