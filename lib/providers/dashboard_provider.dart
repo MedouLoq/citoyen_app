@@ -74,7 +74,8 @@ class DashboardProvider with ChangeNotifier {
           if (response.statusCode == 200) {
             return jsonDecode(response.body);
           } else {
-            throw Exception('Failed to fetch $endpoint: Status code ${response.statusCode}, Body: ${response.body}');
+            throw Exception(
+                'Failed to fetch $endpoint: Status code ${response.statusCode}, Body: ${response.body}');
           }
         } on TimeoutException catch (e) {
           throw Exception('Timeout fetching $endpoint: $e');
@@ -83,10 +84,31 @@ class DashboardProvider with ChangeNotifier {
         }
       }
 
+      const String API_BASE_URL = "http://10.0.2.2:8000";
+      const String PROFILE_URL = "$API_BASE_URL/api/profile/";
       // Fetch user profile
+// Add this debug code in your Flutter app
       final profileData = await _apiCall('/api/profile/');
-      _userName = profileData['full_name'] ?? profileData['username'] ?? 'Utilisateur';
 
+// Debug: Print the entire response to see the structure
+      print('=== PROFILE DATA DEBUG ===');
+      print('Full response: ${json.encode(profileData)}');
+      print('Keys available: ${profileData.keys.toList()}');
+      print(
+          'citizen_profile exists: ${profileData.containsKey('citizen_profile')}');
+      if (profileData.containsKey('citizen_profile')) {
+        print('citizen_profile content: ${profileData['citizen_profile']}');
+        if (profileData['citizen_profile'] != null) {
+          print(
+              'citizen_profile keys: ${profileData['citizen_profile'].keys.toList()}');
+        }
+      }
+      print('=== END DEBUG ===');
+
+// Your existing code
+      _userName = profileData['citizen_profile']?['full_name'] ??
+          profileData['username'] ??
+          'Utilisateur';
       // Fetch dashboard stats
       final statsData = await _apiCall('/api/dashboard/stats/');
       _problemCount = statsData['problem_count'] ?? 0;
@@ -97,7 +119,6 @@ class DashboardProvider with ChangeNotifier {
       // Fetch recent activity
       final activityData = await _apiCall('/api/dashboard/activity/');
       _recentActivity = List<Map<String, dynamic>>.from(activityData);
-
     } catch (error) {
       print('Error fetching dashboard data: $error');
       _errorMessage = 'Failed to load data: $error';

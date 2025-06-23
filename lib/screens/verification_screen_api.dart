@@ -1,4 +1,3 @@
-
 // ============================================================================
 // 2. UPDATED VERIFICATION SCREEN
 // ============================================================================
@@ -10,7 +9,7 @@ import 'auth/login_screen.dart';
 class VerificationScreen extends StatefulWidget {
   final String phoneNumber;
   final String language; // Add language parameter
-  final String baseUrl = "http://10.0.2.2:8000/api"; 
+  final String baseUrl = "http://10.0.2.2:8000/api";
 
   const VerificationScreen({
     Key? key,
@@ -59,29 +58,29 @@ class _VerificationScreenState extends State<VerificationScreen> {
         if (response.statusCode == 200) {
           print('Verification successful: ${responseBody['message']}');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(responseBody['message'] ?? 
-              _getText('تم التحقق بنجاح!', 'Verification successful!'))),
+            SnackBar(
+                content: Text(responseBody['message'] ??
+                    _getText('تم التحقق بنجاح!', 'Verification successful!'))),
           );
           await Future.delayed(const Duration(seconds: 1));
           if (mounted) {
-             Navigator.of(context).pushReplacement(
+            Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const LoginScreen()),
             );
           }
         } else {
           setState(() {
-            _errorMessage = responseBody['error'] ?? 
-              _getText('فشل التحقق. يرجى المحاولة مرة أخرى.', 
-                       'Verification failed. Please try again.');
+            _errorMessage = responseBody['error'] ??
+                _getText('فشل التحقق. يرجى المحاولة مرة أخرى.',
+                    'Verification failed. Please try again.');
           });
         }
       } catch (e) {
         print('Error verifying code: $e');
         setState(() {
           _errorMessage = _getText(
-            'حدث خطأ. يرجى التحقق من اتصالك والمحاولة مرة أخرى.',
-            'An error occurred. Please check your connection and try again.'
-          );
+              'حدث خطأ. يرجى التحقق من اتصالك والمحاولة مرة أخرى.',
+              'An error occurred. Please check your connection and try again.');
         });
       } finally {
         if (mounted) {
@@ -115,22 +114,25 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(responseBody['message'] ?? 
-            _getText('تم إعادة إرسال رمز التحقق.', 'Verification code resent.'))),
+          SnackBar(
+              content: Text(responseBody['message'] ??
+                  _getText('تم إعادة إرسال رمز التحقق.',
+                      'Verification code resent.'))),
         );
       } else {
-         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(responseBody['error'] ?? 
-            _getText('فشل في إعادة إرسال الرمز.', 'Failed to resend code.'))),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(responseBody['error'] ??
+                  _getText(
+                      'فشل في إعادة إرسال الرمز.', 'Failed to resend code.'))),
         );
       }
     } catch (e) {
       print('Error resending code: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_getText(
-          'حدث خطأ أثناء إعادة إرسال الرمز.',
-          'An error occurred while resending the code.'
-        ))),
+        SnackBar(
+            content: Text(_getText('حدث خطأ أثناء إعادة إرسال الرمز.',
+                'An error occurred while resending the code.'))),
       );
     } finally {
       if (mounted) {
@@ -155,10 +157,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Text(
-                _getText(
-                  'أدخل رمز التحقق المرسل إلى ${widget.phoneNumber}',
-                  'Enter the verification code sent to ${widget.phoneNumber}'
-                ),
+                _getText('أدخل رمز التحقق المرسل إلى ${widget.phoneNumber}',
+                    'Enter the verification code sent to ${widget.phoneNumber}'),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
@@ -168,17 +168,20 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 decoration: InputDecoration(
                   labelText: _getText('رمز التحقق', 'Verification Code'),
                   border: const OutlineInputBorder(),
-                  hintText: _getText('أدخل الرمز المكون من 6 أرقام', 'Enter 6-digit code'),
+                  hintText: _getText(
+                      'أدخل الرمز المكون من 6 أرقام', 'Enter 6-digit code'),
                   counterText: "",
                 ),
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return _getText('يرجى إدخال الرمز', 'Please enter the code');
+                    return _getText(
+                        'يرجى إدخال الرمز', 'Please enter the code');
                   }
-                  if (value.length != 6) { 
-                    return _getText('يجب أن يكون الرمز 6 أرقام', 'Code must be 6 digits');
+                  if (value.length != 6) {
+                    return _getText(
+                        'يجب أن يكون الرمز 6 أرقام', 'Code must be 6 digits');
                   }
                   return null;
                 },

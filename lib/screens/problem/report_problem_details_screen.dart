@@ -1,3 +1,4 @@
+// lib/screens/report_problem_details_screen.dart
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -49,13 +50,16 @@ Future<String?> _getAuthToken() async {
 class ReportProblemDetailsScreen extends StatefulWidget {
   final CategoryModel category;
 
-  const ReportProblemDetailsScreen({Key? key, required this.category}) : super(key: key);
+  const ReportProblemDetailsScreen({Key? key, required this.category})
+      : super(key: key);
 
   @override
-  _ReportProblemDetailsScreenState createState() => _ReportProblemDetailsScreenState();
+  _ReportProblemDetailsScreenState createState() =>
+      _ReportProblemDetailsScreenState();
 }
 
-class _ReportProblemDetailsScreenState extends State<ReportProblemDetailsScreen> {
+class _ReportProblemDetailsScreenState
+    extends State<ReportProblemDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _descriptionController = TextEditingController();
 
@@ -154,259 +158,282 @@ class _ReportProblemDetailsScreenState extends State<ReportProblemDetailsScreen>
       });
 
       await _getMunicipalityDetails(position);
-
     } catch (e) {
       print("Error getting location: $e");
       if (mounted) {
         setState(() {
           _isLoadingLocation = false;
-          _errorMessage = 'Erreur de localisation: Impossible d\'obtenir la position.';
+          _errorMessage =
+              'Erreur de localisation: Impossible d\'obtenir la position.';
         });
         _showSnackBar('Erreur de localisation: $e');
       }
     }
   }
 
-
-
-Future<void> _getMunicipalityDetails(Position? position) async {
-  if (position == null) {
-    print("Position is null, cannot fetch municipality details.");
-    if (mounted) setState(() => _errorMessage = "Position non disponible.");
-    return;
-  }
-  if (_isFetchingMunicipalityId || !mounted) return;
-
-  setState(() {
-    _isFetchingMunicipalityId = true;
-    _municipalityId = null;
-    _municipalityCandidateName = null;
-  });
-
-  print("Starting geocoding for Lat: ${position.latitude}, Lon: ${position.longitude}");
-
-  try {
-    String? candidateName;
-    
-    if (kIsWeb) {
-      // Use web-compatible geocoding fallback
-      print("Running on web - using fallback geocoding");
-      candidateName = await _webGeocodingFallback(position.latitude, position.longitude);
-    } else {
-      // Use native geocoding for mobile
-      print("Running on mobile - using native geocoding");
-      candidateName = await _nativeGeocoding(position.latitude, position.longitude);
+  Future<void> _getMunicipalityDetails(Position? position) async {
+    if (position == null) {
+      print("Position is null, cannot fetch municipality details.");
+      if (mounted) setState(() => _errorMessage = "Position non disponible.");
+      return;
     }
-
-    if (!mounted) return;
-
-    print("Municipality Candidate extracted: $candidateName");
+    if (_isFetchingMunicipalityId || !mounted) return;
 
     setState(() {
-      _municipalityCandidateName = candidateName;
+      _isFetchingMunicipalityId = true;
+      _municipalityId = null;
+      _municipalityCandidateName = null;
     });
 
-    if (candidateName != null && candidateName.isNotEmpty) {
-      print("Fetching ID for candidate: $candidateName");
-      String? fetchedId = await _fetchMunicipalityId(
-        candidateName,
-        position.latitude,
-        position.longitude,
-      );
-      
+    print(
+        "Starting geocoding for Lat: ${position.latitude}, Lon: ${position.longitude}");
+
+    try {
+      String? candidateName;
+
+      if (kIsWeb) {
+        // Use web-compatible geocoding fallback
+        print("Running on web - using fallback geocoding");
+        candidateName =
+            await _webGeocodingFallback(position.latitude, position.longitude);
+      } else {
+        // Use native geocoding for mobile
+        print("Running on mobile - using native geocoding");
+        candidateName =
+            await _nativeGeocoding(position.latitude, position.longitude);
+      }
+
       if (!mounted) return;
-      print("Fetched Municipality ID: $fetchedId");
+
+      print("Municipality Candidate extracted: $candidateName");
 
       setState(() {
-        _municipalityId = fetchedId;
+        _municipalityCandidateName = candidateName;
       });
 
-      if (fetchedId == null || fetchedId.isEmpty) {
-        _showSnackBar("Municipalité '$candidateName' non trouvée.", isError: true);
+      if (candidateName != null && candidateName.isNotEmpty) {
+        print("Fetching ID for candidate: $candidateName");
+        String? fetchedId = await _fetchMunicipalityId(
+          candidateName,
+          position.latitude,
+          position.longitude,
+        );
+
+        if (!mounted) return;
+        print("Fetched Municipality ID: $fetchedId");
+
+        setState(() {
+          _municipalityId = fetchedId;
+        });
+
+        if (fetchedId == null || fetchedId.isEmpty) {
+          _showSnackBar("Municipalité '$candidateName' non trouvée.",
+              isError: true);
+        }
+      } else {
+        _showSnackBar("Impossible d'extraire le nom de la municipalité.",
+            isError: true);
       }
-    } else {
-      _showSnackBar("Impossible d'extraire le nom de la municipalité.", isError: true);
-    }
-  } catch (e) {
-    print("Error during geocoding or fetching municipality ID: $e");
-    if (mounted) {
-      _showSnackBar("Erreur (géocodage/municipalité): $e", isError: true);
-      setState(() => _errorMessage = "Erreur détermination municipalité.");
-    }
-  } finally {
-    if (mounted) {
-      setState(() => _isFetchingMunicipalityId = false);
+    } catch (e) {
+      print("Error during geocoding or fetching municipality ID: $e");
+      if (mounted) {
+        _showSnackBar("Erreur (géocodage/municipalité): $e", isError: true);
+        setState(() => _errorMessage = "Erreur détermination municipalité.");
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isFetchingMunicipalityId = false);
+      }
     }
   }
-}
 
 // Native geocoding for mobile platforms
-Future<String?> _nativeGeocoding(double latitude, double longitude) async {
-  try {
-    List<Placemark> placemarks = await placemarkFromCoordinates(
-      latitude,
-      longitude,
-    ).timeout(const Duration(seconds: 10));
+  Future<String?> _nativeGeocoding(double latitude, double longitude) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        latitude,
+        longitude,
+      ).timeout(const Duration(seconds: 10));
 
-    if (placemarks.isNotEmpty) {
-      Placemark place = placemarks.first;
-      print("Native geocoding result: ${place.toJson()}");
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+        print("Native geocoding result: ${place.toJson()}");
 
-      // Extract candidate name with priority
-      String? candidateName = place.subAdministrativeArea?.isNotEmpty == true ? place.subAdministrativeArea
-          : place.locality?.isNotEmpty == true ? place.locality
-          : place.administrativeArea?.isNotEmpty == true ? place.administrativeArea
-          : place.street?.isNotEmpty == true ? place.street
-          : place.name?.isNotEmpty == true ? place.name
-          : null;
+        // Extract candidate name with priority
+        String? candidateName = place.subAdministrativeArea?.isNotEmpty == true
+            ? place.subAdministrativeArea
+            : place.locality?.isNotEmpty == true
+                ? place.locality
+                : place.administrativeArea?.isNotEmpty == true
+                    ? place.administrativeArea
+                    : place.street?.isNotEmpty == true
+                        ? place.street
+                        : place.name?.isNotEmpty == true
+                            ? place.name
+                            : null;
 
-      return candidateName;
-    }
-    return null;
-  } catch (e) {
-    print("Native geocoding failed: $e");
-    return null;
-  }
-}
-
-// Web-compatible geocoding fallback using OpenStreetMap Nominatim
-Future<String?> _webGeocodingFallback(double latitude, double longitude) async {
-  try {
-    // Using OpenStreetMap Nominatim API for reverse geocoding
-    final url = Uri.parse(
-      'https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude&zoom=10&addressdetails=1'
-    );
-    
-    print("Web geocoding URL: $url");
-    
-    final response = await http.get(
-      url,
-      headers: {
-        'User-Agent': 'YourApp/1.0 (your-email@example.com)', // Required by Nominatim
-        'Accept': 'application/json',
-      },
-    ).timeout(const Duration(seconds: 15));
-
-    print("Web geocoding response status: ${response.statusCode}");
-    print("Web geocoding response body: ${response.body}");
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      
-      if (data != null && data['address'] != null) {
-        final address = data['address'];
-        
-        // Extract municipality name from different possible fields
-        String? candidateName;
-        
-        // Try different address components in priority order
-        if (address['city'] != null && address['city'].toString().isNotEmpty) {
-          candidateName = address['city'];
-        } else if (address['town'] != null && address['town'].toString().isNotEmpty) {
-          candidateName = address['town'];
-        } else if (address['village'] != null && address['village'].toString().isNotEmpty) {
-          candidateName = address['village'];
-        } else if (address['municipality'] != null && address['municipality'].toString().isNotEmpty) {
-          candidateName = address['municipality'];
-        } else if (address['suburb'] != null && address['suburb'].toString().isNotEmpty) {
-          candidateName = address['suburb'];
-        } else if (address['county'] != null && address['county'].toString().isNotEmpty) {
-          candidateName = address['county'];
-        } else if (address['state'] != null && address['state'].toString().isNotEmpty) {
-          candidateName = address['state'];
-        }
-        
-        print("Web geocoding extracted candidate: $candidateName");
         return candidateName;
       }
-    }
-    
-    print("Web geocoding failed: No valid address data");
-    return null;
-  } catch (e) {
-    print("Web geocoding failed with error: $e");
-    return null;
-  }
-}
-
-// Alternative: Try both methods and use the best result
-Future<String?> _hybridGeocoding(double latitude, double longitude) async {
-  String? nativeResult;
-  String? webResult;
-  
-  // Try native geocoding first (faster if available)
-  if (!kIsWeb) {
-    try {
-      nativeResult = await _nativeGeocoding(latitude, longitude);
-      print("Native geocoding result: $nativeResult");
+      return null;
     } catch (e) {
       print("Native geocoding failed: $e");
-    }
-  }
-  
-  // Try web geocoding as fallback or primary method on web
-  try {
-    webResult = await _webGeocodingFallback(latitude, longitude);
-    print("Web geocoding result: $webResult");
-  } catch (e) {
-    print("Web geocoding failed: $e");
-  }
-  
-  // Return the best available result
-  if (nativeResult != null && nativeResult.isNotEmpty) {
-    return nativeResult;
-  } else if (webResult != null && webResult.isNotEmpty) {
-    return webResult;
-  }
-  
-  return null;
-}
-
-
-// Fix the _fetchMunicipalityId method to handle integer response
-Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lon) async {
-  const String baseUrl = "http://10.0.2.2:8000"; // Ensure this is correct
-  final encodedName = Uri.encodeComponent(candidateName.trim());
-  final url = Uri.parse("$baseUrl/get_municipality_id/?name=$encodedName&lat=$lat&lon=$lon");
-
-  print("Fetching Municipality ID from URL: $url");
-
-  try {
-    final response = await http.get(url,
-      headers: {'Accept': 'application/json'},
-    ).timeout(const Duration(seconds: 15));
-
-    print("Backend Response Status (get_municipality_id): ${response.statusCode}");
-    print("Backend Response Body (get_municipality_id): ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}");
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      
-      // Handle both int and String responses from backend
-      final dynamic municipalityId = data['municipality_id'];
-      String? fetchedId;
-      
-      if (municipalityId is int) {
-        fetchedId = municipalityId.toString();
-      } else if (municipalityId is String) {
-        fetchedId = municipalityId.isNotEmpty ? municipalityId : null;
-      } else {
-        print("Unexpected municipality_id type: ${municipalityId.runtimeType}");
-        fetchedId = null;
-      }
-      
-      print("Parsed municipality_id: $fetchedId");
-      return fetchedId;
-    } else {
-      print("Error fetching municipality ID: Status ${response.statusCode}, Body: ${response.body}");
       return null;
     }
-  } catch (e) {
-    print("Exception during HTTP request for municipality ID: $e");
+  }
+
+// Web-compatible geocoding fallback using OpenStreetMap Nominatim
+  Future<String?> _webGeocodingFallback(
+      double latitude, double longitude) async {
+    try {
+      // Using OpenStreetMap Nominatim API for reverse geocoding
+      final url = Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude&zoom=10&addressdetails=1');
+
+      print("Web geocoding URL: $url");
+
+      final response = await http.get(
+        url,
+        headers: {
+          'User-Agent':
+              'YourApp/1.0 (your-email@example.com)', // Required by Nominatim
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 15));
+
+      print("Web geocoding response status: ${response.statusCode}");
+      print("Web geocoding response body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data != null && data['address'] != null) {
+          final address = data['address'];
+
+          // Extract municipality name from different possible fields
+          String? candidateName;
+
+          // Try different address components in priority order
+          if (address['city'] != null &&
+              address['city'].toString().isNotEmpty) {
+            candidateName = address['city'];
+          } else if (address['town'] != null &&
+              address['town'].toString().isNotEmpty) {
+            candidateName = address['town'];
+          } else if (address['village'] != null &&
+              address['village'].toString().isNotEmpty) {
+            candidateName = address['village'];
+          } else if (address['municipality'] != null &&
+              address['municipality'].toString().isNotEmpty) {
+            candidateName = address['municipality'];
+          } else if (address['suburb'] != null &&
+              address['suburb'].toString().isNotEmpty) {
+            candidateName = address['suburb'];
+          } else if (address['county'] != null &&
+              address['county'].toString().isNotEmpty) {
+            candidateName = address['county'];
+          } else if (address['state'] != null &&
+              address['state'].toString().isNotEmpty) {
+            candidateName = address['state'];
+          }
+
+          print("Web geocoding extracted candidate: $candidateName");
+          return candidateName;
+        }
+      }
+
+      print("Web geocoding failed: No valid address data");
+      return null;
+    } catch (e) {
+      print("Web geocoding failed with error: $e");
+      return null;
+    }
+  }
+
+// Alternative: Try both methods and use the best result
+  Future<String?> _hybridGeocoding(double latitude, double longitude) async {
+    String? nativeResult;
+    String? webResult;
+
+    // Try native geocoding first (faster if available)
+    if (!kIsWeb) {
+      try {
+        nativeResult = await _nativeGeocoding(latitude, longitude);
+        print("Native geocoding result: $nativeResult");
+      } catch (e) {
+        print("Native geocoding failed: $e");
+      }
+    }
+
+    // Try web geocoding as fallback or primary method on web
+    try {
+      webResult = await _webGeocodingFallback(latitude, longitude);
+      print("Web geocoding result: $webResult");
+    } catch (e) {
+      print("Web geocoding failed: $e");
+    }
+
+    // Return the best available result
+    if (nativeResult != null && nativeResult.isNotEmpty) {
+      return nativeResult;
+    } else if (webResult != null && webResult.isNotEmpty) {
+      return webResult;
+    }
+
     return null;
   }
-}
- void _updateMarkers() {
+
+// Fix the _fetchMunicipalityId method to handle integer response
+  Future<String?> _fetchMunicipalityId(
+      String candidateName, double lat, double lon) async {
+    const String baseUrl = "http://10.0.2.2:8000"; // Ensure this is correct
+    final encodedName = Uri.encodeComponent(candidateName.trim());
+    final url = Uri.parse(
+        "$baseUrl/get_municipality_id/?name=$encodedName&lat=$lat&lon=$lon");
+
+    print("Fetching Municipality ID from URL: $url");
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {'Accept': 'application/json'},
+      ).timeout(const Duration(seconds: 15));
+
+      print(
+          "Backend Response Status (get_municipality_id): ${response.statusCode}");
+      print(
+          "Backend Response Body (get_municipality_id): ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // Handle both int and String responses from backend
+        final dynamic municipalityId = data['municipality_id'];
+        String? fetchedId;
+
+        if (municipalityId is int) {
+          fetchedId = municipalityId.toString();
+        } else if (municipalityId is String) {
+          fetchedId = municipalityId.isNotEmpty ? municipalityId : null;
+        } else {
+          print(
+              "Unexpected municipality_id type: ${municipalityId.runtimeType}");
+          fetchedId = null;
+        }
+
+        print("Parsed municipality_id: $fetchedId");
+        return fetchedId;
+      } else {
+        print(
+            "Error fetching municipality ID: Status ${response.statusCode}, Body: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      print("Exception during HTTP request for municipality ID: $e");
+      return null;
+    }
+  }
+
+  void _updateMarkers() {
     if (_selectedLocation == null || !mounted) return;
     setState(() {
       _markers = [
@@ -435,7 +462,8 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
         return;
       }
       await _audioRecorder!.openRecorder();
-      _audioRecorder!.setSubscriptionDuration(const Duration(milliseconds: 100));
+      _audioRecorder!
+          .setSubscriptionDuration(const Duration(milliseconds: 100));
       if (mounted) setState(() => _isRecorderInitialized = true);
     } catch (e) {
       print("Error initializing audio recorder: $e");
@@ -447,19 +475,24 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
     try {
       final ImagePicker picker = ImagePicker();
       if (source == ImageSource.gallery) {
-         final List<XFile> pickedFiles = await picker.pickMultiImage(
-           maxWidth: 1200, maxHeight: 1200, imageQuality: 85,
-         );
-         if (pickedFiles.isNotEmpty && mounted) {
-           setState(() => _photoFiles = pickedFiles.take(3).toList());
-         }
+        final List<XFile> pickedFiles = await picker.pickMultiImage(
+          maxWidth: 1200,
+          maxHeight: 1200,
+          imageQuality: 85,
+        );
+        if (pickedFiles.isNotEmpty && mounted) {
+          setState(() => _photoFiles = pickedFiles.take(3).toList());
+        }
       } else {
         final XFile? pickedFile = await picker.pickImage(
-          source: source, maxWidth: 1200, maxHeight: 1200, imageQuality: 85,
+          source: source,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          imageQuality: 85,
         );
         if (pickedFile != null && mounted) {
           if (_photoFiles.length < 3) {
-             setState(() => _photoFiles.add(pickedFile));
+            setState(() => _photoFiles.add(pickedFile));
           } else {
             _showSnackBar("Vous ne pouvez joindre que 3 images maximum.");
           }
@@ -470,7 +503,7 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
     }
   }
 
-  // --- Updated Video Picking --- 
+  // --- Updated Video Picking ---
   Future<void> _pickOrRecordVideo(ImageSource source) async {
     // Request camera permission if needed
     if (source == ImageSource.camera) {
@@ -480,7 +513,7 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
         return;
       }
     }
-    
+
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? pickedFile = await picker.pickVideo(source: source);
@@ -493,7 +526,7 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
       if (mounted) _showSnackBar("Erreur sélection/enregistrement vidéo: $e");
     }
   }
-  // --- End Updated Video Picking --- 
+  // --- End Updated Video Picking ---
 
   Future<void> _toggleAudioRecording() async {
     if (!_isRecorderInitialized || _audioRecorder == null) {
@@ -511,12 +544,16 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
             _recordingStream = null;
             _recordingDuration = Duration.zero;
           });
-          _showSnackBar("Enregistrement terminé: ${p.basename(path)}", isError: false);
+          _showSnackBar("Enregistrement terminé: ${p.basename(path)}",
+              isError: false);
         }
       } catch (e) {
         print("Error stopping recording: $e");
         if (mounted) _showSnackBar("Erreur lors de l'arrêt: $e");
-        setState(() { _isRecording = false; _recordingStream = null; });
+        setState(() {
+          _isRecording = false;
+          _recordingStream = null;
+        });
       }
     } else {
       try {
@@ -527,8 +564,9 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
         }
 
         final Directory tempDir = await getTemporaryDirectory();
-        _recordingPath = '${tempDir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.aac';
-        
+        _recordingPath =
+            '${tempDir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.aac';
+
         await _audioRecorder!.startRecorder(
           toFile: _recordingPath,
           codec: Codec.aacADTS,
@@ -536,7 +574,8 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
 
         _recordingStream = _audioRecorder!.onProgress;
         _recordingStream?.listen((disposition) {
-          if (mounted) setState(() => _recordingDuration = disposition.duration);
+          if (mounted)
+            setState(() => _recordingDuration = disposition.duration);
         });
 
         if (mounted) {
@@ -549,7 +588,10 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
       } catch (e) {
         print("Error starting recording: $e");
         if (mounted) _showSnackBar("Erreur lors du démarrage: $e");
-        setState(() { _isRecording = false; _recordingStream = null; });
+        setState(() {
+          _isRecording = false;
+          _recordingStream = null;
+        });
       }
     }
   }
@@ -571,8 +613,8 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
 
   Future<void> _submitProblem() async {
     if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
-       _showSnackBar("Veuillez remplir les champs obligatoires.");
-       return;
+      _showSnackBar("Veuillez remplir les champs obligatoires.");
+      return;
     }
     if (_selectedLocation == null) {
       _showSnackBar("Veuillez sélectionner la position du problème.");
@@ -604,7 +646,8 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
     }
 
     try {
-      var uri = Uri.parse("http://10.0.2.2:8000/api/problems/report/"); // Ensure correct endpoint
+      var uri = Uri.parse(
+          "http://10.0.2.2:8000/api/problems/report/"); // Ensure correct endpoint
       var request = http.MultipartRequest("POST", uri);
       request.headers['Authorization'] = 'Token $authToken';
 
@@ -617,22 +660,30 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
         request.fields["municipality"] = _municipalityId!;
         print("Sending Municipality ID: $_municipalityId");
       } else {
-         print("Municipality ID is null or empty, not sending field.");
+        print("Municipality ID is null or empty, not sending field.");
       }
 
       // Add files
       for (var photoFile in _photoFiles) {
-         request.files.add(await http.MultipartFile.fromPath("photo", photoFile.path, filename: p.basename(photoFile.path)));
+        request.files.add(await http.MultipartFile.fromPath(
+            "photo", photoFile.path,
+            filename: p.basename(photoFile.path)));
       }
       if (_videoFile != null) {
-        request.files.add(await http.MultipartFile.fromPath("video", _videoFile!.path, filename: p.basename(_videoFile!.path)));
+        request.files.add(await http.MultipartFile.fromPath(
+            "video", _videoFile!.path,
+            filename: p.basename(_videoFile!.path)));
       }
       if (_voiceRecordFile != null) {
-        request.files.add(await http.MultipartFile.fromPath("voice_record", _voiceRecordFile!.path, filename: p.basename(_voiceRecordFile!.path)));
+        request.files.add(await http.MultipartFile.fromPath(
+            "voice_record", _voiceRecordFile!.path,
+            filename: p.basename(_voiceRecordFile!.path)));
       }
       for (var docFile in _documentFiles) {
         if (docFile.path != null) {
-          request.files.add(await http.MultipartFile.fromPath("document", docFile.path!, filename: docFile.name));
+          request.files.add(await http.MultipartFile.fromPath(
+              "document", docFile.path!,
+              filename: docFile.name));
         }
       }
 
@@ -651,9 +702,14 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
         String errorMsg = response.reasonPhrase ?? 'Erreur inconnue';
         try {
           var decodedBody = jsonDecode(responseBody);
-          errorMsg = decodedBody['detail'] ?? decodedBody['error'] ?? decodedBody.toString();
-        } catch (_) { errorMsg = responseBody.isNotEmpty ? responseBody : errorMsg; }
-        _showSnackBar("Échec: $errorMsg (Code: ${response.statusCode})", isError: true);
+          errorMsg = decodedBody['detail'] ??
+              decodedBody['error'] ??
+              decodedBody.toString();
+        } catch (_) {
+          errorMsg = responseBody.isNotEmpty ? responseBody : errorMsg;
+        }
+        _showSnackBar("Échec: $errorMsg (Code: ${response.statusCode})",
+            isError: true);
         setState(() => _errorMessage = "Échec: $errorMsg");
       }
     } catch (e) {
@@ -664,7 +720,7 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
       }
     } finally {
       if (mounted) {
-         setState(() => _isSubmitting = false);
+        setState(() => _isSubmitting = false);
       }
     }
   }
@@ -672,8 +728,8 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
   void _showSnackBar(String message, {bool isError = true}) {
     if (!mounted) return;
     // Use Theme colors for SnackBar
-    final Color snackBarColor = isError 
-        ? (Theme.of(context).colorScheme.error) 
+    final Color snackBarColor = isError
+        ? (Theme.of(context).colorScheme.error)
         : (Theme.of(context).colorScheme.primary);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -702,15 +758,18 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
     final Color primaryColor = theme.colorScheme.primary;
     final Color onPrimaryColor = theme.colorScheme.onPrimary;
     final Color secondaryContainerColor = theme.colorScheme.secondaryContainer;
-    final Color onSecondaryContainerColor = theme.colorScheme.onSecondaryContainer;
+    final Color onSecondaryContainerColor =
+        theme.colorScheme.onSecondaryContainer;
     final Color errorColor = theme.colorScheme.error;
     final Color surfaceColor = theme.colorScheme.surface;
     final Color onSurfaceColor = theme.colorScheme.onSurface;
     final Color onSurfaceVariantColor = theme.colorScheme.onSurfaceVariant;
     final Color outlineColor = theme.colorScheme.outline;
-    final Color lightBackgroundColor = theme.colorScheme.surfaceVariant.withOpacity(0.3);
+    final Color lightBackgroundColor =
+        theme.colorScheme.surfaceVariant.withOpacity(0.3);
     final Color secondaryTextColor = onSurfaceVariantColor.withOpacity(0.7);
-    final Color iconColor = primaryColor; // Use primary color for icons by default
+    final Color iconColor =
+        primaryColor; // Use primary color for icons by default
     final Color borderColor = outlineColor.withOpacity(0.5);
 
     return Scaffold(
@@ -718,13 +777,15 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
       appBar: AppBar(
         title: Text(
           'Signaler un Problème',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: onPrimaryColor),
+          style: GoogleFonts.inter(
+              fontWeight: FontWeight.bold, color: onPrimaryColor),
         ),
         backgroundColor: primaryColor,
         foregroundColor: onPrimaryColor,
         elevation: 1,
         leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white), // force white here
+          icon: const Icon(Icons.arrow_back,
+              color: Colors.white), // force white here
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -737,20 +798,32 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
             children: [
               // Loading/Error/Info Section
               if (_isLoadingLocation)
-                const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))
-                    .animate().fadeIn(),
+                const Center(
+                        child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator()))
+                    .animate()
+                    .fadeIn(),
               if (_isFetchingMunicipalityId)
-                 Padding(
-                   padding: const EdgeInsets.symmetric(vertical: 8.0),
-                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                     SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: primaryColor)),
-                     const SizedBox(width: 8),
-                     Text("Recherche municipalité...", style: GoogleFonts.inter(color: primaryColor)),
-                   ]),
-                 ).animate().fadeIn(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: primaryColor)),
+                        const SizedBox(width: 8),
+                        Text("Recherche municipalité...",
+                            style: GoogleFonts.inter(color: primaryColor)),
+                      ]),
+                ).animate().fadeIn(),
               if (_errorMessage.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: errorColor.withOpacity(0.1),
@@ -760,27 +833,41 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
                   child: Row(children: [
                     Icon(Icons.error_outline, color: errorColor, size: 20),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(_errorMessage, style: GoogleFonts.inter(color: errorColor, fontSize: 13))),
+                    Expanded(
+                        child: Text(_errorMessage,
+                            style: GoogleFonts.inter(
+                                color: errorColor, fontSize: 13))),
                   ]),
                 ).animate().fadeIn(),
-              if (_municipalityId != null && _municipalityId!.isNotEmpty && !_isFetchingMunicipalityId)
-                 Padding(
-                   padding: const EdgeInsets.only(bottom: 16.0),
-                   child: Text(
-                     "Municipalité: ${_municipalityCandidateName ?? ''} (ID: $_municipalityId)", 
-                     style: GoogleFonts.inter(color: primaryColor, fontWeight: FontWeight.w500, fontSize: 13),
-                     textAlign: TextAlign.center,
-                   ),
-                 ).animate().fadeIn(),
-               if (_municipalityId == null && _municipalityCandidateName != null && !_isFetchingMunicipalityId && !_isLoadingLocation)
-                 Padding(
-                   padding: const EdgeInsets.only(bottom: 16.0),
-                   child: Text(
-                     "Municipalité '${_municipalityCandidateName}' non trouvée.", 
-                     style: GoogleFonts.inter(color: Colors.orange.shade900, fontWeight: FontWeight.w500, fontSize: 13),
-                     textAlign: TextAlign.center,
-                   ),
-                 ).animate().fadeIn(),
+              if (_municipalityId != null &&
+                  _municipalityId!.isNotEmpty &&
+                  !_isFetchingMunicipalityId)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Text(
+                    "Municipalité: ${_municipalityCandidateName ?? ''} (ID: $_municipalityId)",
+                    style: GoogleFonts.inter(
+                        color: primaryColor,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
+                ).animate().fadeIn(),
+              if (_municipalityId == null &&
+                  _municipalityCandidateName != null &&
+                  !_isFetchingMunicipalityId &&
+                  !_isLoadingLocation)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Text(
+                    "Municipalité '${_municipalityCandidateName}' non trouvée.",
+                    style: GoogleFonts.inter(
+                        color: Colors.orange.shade900,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
+                ).animate().fadeIn(),
 
               // Description Section
               _buildSectionTitle('Description du problème*', theme),
@@ -788,22 +875,28 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
               TextFormField(
                 controller: _descriptionController,
                 decoration: _inputDecoration(
-                  hintText: 'Décrivez le problème en détail...', 
+                  hintText: 'Décrivez le problème en détail...',
                   theme: theme,
                 ),
                 maxLines: 5,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) return 'Veuillez fournir une description';
+                  if (value == null || value.trim().isEmpty)
+                    return 'Veuillez fournir une description';
                   if (value.trim().length < 10) return 'Minimum 10 caractères';
                   return null;
                 },
               ),
               const SizedBox(height: 12),
               ElevatedButton.icon(
-                icon: Icon(_isRecording ? Icons.stop_circle : Icons.mic, color: _isRecording ? errorColor : iconColor),
+                icon: Icon(_isRecording ? Icons.stop_circle : Icons.mic,
+                    color: _isRecording ? errorColor : iconColor),
                 label: Text(
-                  _isRecording ? 'Arrêter (${_formatDuration(_recordingDuration)})' : 'Note Vocale',
-                  style: GoogleFonts.inter(color: _isRecording ? errorColor : iconColor, fontWeight: FontWeight.w600),
+                  _isRecording
+                      ? 'Arrêter (${_formatDuration(_recordingDuration)})'
+                      : 'Note Vocale',
+                  style: GoogleFonts.inter(
+                      color: _isRecording ? errorColor : iconColor,
+                      fontWeight: FontWeight.w600),
                 ),
                 onPressed: _toggleAudioRecording,
                 style: ElevatedButton.styleFrom(
@@ -811,7 +904,8 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
                   foregroundColor: iconColor,
                   elevation: 0,
                   side: BorderSide(color: borderColor),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
@@ -821,15 +915,21 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
                   child: Row(children: [
                     Icon(Icons.audiotrack, color: primaryColor, size: 16),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(p.basename(_voiceRecordFile!.path), style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
-                    IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setState(() => _voiceRecordFile = null)),
+                    Expanded(
+                        child: Text(p.basename(_voiceRecordFile!.path),
+                            style: const TextStyle(fontSize: 12),
+                            overflow: TextOverflow.ellipsis)),
+                    IconButton(
+                        icon: const Icon(Icons.clear, size: 16),
+                        onPressed: () =>
+                            setState(() => _voiceRecordFile = null)),
                   ]),
                 ),
               const SizedBox(height: 24),
 
               // Location Section
               _buildAttachmentSection(
-                title: 'Emplacement du problème*', 
+                title: 'Emplacement du problème*',
                 subtitle: 'Vous devez choisir un emplacement',
                 icon: Icons.location_on,
                 theme: theme,
@@ -837,202 +937,226 @@ Future<String?> _fetchMunicipalityId(String candidateName, double lat, double lo
                   children: [
                     // Replace your FlutterMap widget section with this updated version:
 
-Container(
-  height: 250,
-  decoration: BoxDecoration(
-    borderRadius: BorderRadius.circular(8),
-    border: Border.all(color: borderColor),
-  ),
-  child: ClipRRect(
-    borderRadius: BorderRadius.circular(8),
-    child: _isLoadingLocation || _userLocation == null
-        ? Center(child: Text('Chargement de la carte...', style: TextStyle(color: secondaryTextColor)))
-        : Stack(
-            children: [
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: _userLocation!,
-                  initialZoom: 15,
-                  minZoom: 5,
-                  maxZoom: 18,
-                  onTap: (tapPosition, point) {
-                    if (mounted) {
-                      setState(() {
-                        _selectedLocation = point;
-                        _updateMarkers();
-                        _getMunicipalityDetails(Position(
-                          latitude: point.latitude, 
-                          longitude: point.longitude, 
-                          timestamp: DateTime.now(), 
-                          accuracy: 0, 
-                          altitude: 0, 
-                          heading: 0, 
-                          speed: 0, 
-                          speedAccuracy: 0, 
-                          altitudeAccuracy: 0, 
-                          headingAccuracy: 0
-                        ));
-                      });
-                    }
-                  },
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.example.citoyen_app', // Replace with your package name
-                  ),
-                  MarkerLayer(markers: _markers),
-                ],
-              ),
-              
-              // Zoom Controls
-              Positioned(
-                right: 10,
-                top: 10,
-                child: Column(
-                  children: [
-                    // Zoom In Button
                     Container(
+                      height: 250,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            spreadRadius: 1,
-                            blurRadius: 3,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: borderColor),
                       ),
-                      child: IconButton(
-                        icon: Icon(Icons.add, color: theme.colorScheme.onSurface),
-                        iconSize: 20,
-                        padding: const EdgeInsets.all(8),
-                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                        onPressed: () {
-                          if (_mapController != null) {
-                            final currentZoom = _mapController!.camera.zoom;
-                            if (currentZoom < 18) {
-                              _mapController!.move(
-                                _mapController!.camera.center, 
-                                currentZoom + 1
-                              );
-                            }
-                          }
-                        },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: _isLoadingLocation || _userLocation == null
+                            ? Center(
+                                child: Text('Chargement de la carte...',
+                                    style:
+                                        TextStyle(color: secondaryTextColor)))
+                            : Stack(
+                                children: [
+                                  FlutterMap(
+                                    mapController: _mapController,
+                                    options: MapOptions(
+                                      initialCenter: _userLocation!,
+                                      initialZoom: 15,
+                                      minZoom: 5,
+                                      maxZoom: 18,
+                                      onTap: (tapPosition, point) {
+                                        if (mounted) {
+                                          setState(() {
+                                            _selectedLocation = point;
+                                            _updateMarkers();
+                                            _getMunicipalityDetails(Position(
+                                                latitude: point.latitude,
+                                                longitude: point.longitude,
+                                                timestamp: DateTime.now(),
+                                                accuracy: 0,
+                                                altitude: 0,
+                                                heading: 0,
+                                                speed: 0,
+                                                speedAccuracy: 0,
+                                                altitudeAccuracy: 0,
+                                                headingAccuracy: 0));
+                                          });
+                                        }
+                                      },
+                                    ),
+                                    children: [
+                                      TileLayer(
+                                        urlTemplate:
+                                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                        userAgentPackageName:
+                                            'com.example.citoyen_app', // Replace with your package name
+                                      ),
+                                      MarkerLayer(markers: _markers),
+                                    ],
+                                  ),
+
+                                  // Zoom Controls
+                                  Positioned(
+                                    right: 10,
+                                    top: 10,
+                                    child: Column(
+                                      children: [
+                                        // Zoom In Button
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.surface,
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.2),
+                                                spreadRadius: 1,
+                                                blurRadius: 3,
+                                                offset: const Offset(0, 1),
+                                              ),
+                                            ],
+                                          ),
+                                          child: IconButton(
+                                            icon: Icon(Icons.add,
+                                                color: theme
+                                                    .colorScheme.onSurface),
+                                            iconSize: 20,
+                                            padding: const EdgeInsets.all(8),
+                                            constraints: const BoxConstraints(
+                                                minWidth: 36, minHeight: 36),
+                                            onPressed: () {
+                                              if (_mapController != null) {
+                                                final currentZoom =
+                                                    _mapController!.camera.zoom;
+                                                if (currentZoom < 18) {
+                                                  _mapController!.move(
+                                                      _mapController!
+                                                          .camera.center,
+                                                      currentZoom + 1);
+                                                }
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+
+                                        // Zoom Out Button
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.surface,
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.2),
+                                                spreadRadius: 1,
+                                                blurRadius: 3,
+                                                offset: const Offset(0, 1),
+                                              ),
+                                            ],
+                                          ),
+                                          child: IconButton(
+                                            icon: Icon(Icons.remove,
+                                                color: theme
+                                                    .colorScheme.onSurface),
+                                            iconSize: 20,
+                                            padding: const EdgeInsets.all(8),
+                                            constraints: const BoxConstraints(
+                                                minWidth: 36, minHeight: 36),
+                                            onPressed: () {
+                                              if (_mapController != null) {
+                                                final currentZoom =
+                                                    _mapController!.camera.zoom;
+                                                if (currentZoom > 5) {
+                                                  _mapController!.move(
+                                                      _mapController!
+                                                          .camera.center,
+                                                      currentZoom - 1);
+                                                }
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // My Location Button
+                                  Positioned(
+                                    right: 10,
+                                    bottom: 10,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.surface,
+                                        borderRadius: BorderRadius.circular(4),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.2),
+                                            spreadRadius: 1,
+                                            blurRadius: 3,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                      child: IconButton(
+                                        icon: Icon(Icons.my_location,
+                                            color: _selectedLocation ==
+                                                    _userLocation
+                                                ? theme.colorScheme.primary
+                                                : theme.colorScheme.onSurface),
+                                        iconSize: 20,
+                                        padding: const EdgeInsets.all(8),
+                                        constraints: const BoxConstraints(
+                                            minWidth: 36, minHeight: 36),
+                                        onPressed: () async {
+                                          if (_userLocation != null &&
+                                              _mapController != null) {
+                                            // Move map to user location
+                                            _mapController!
+                                                .move(_userLocation!, 15);
+
+                                            // Set selected location to user location
+                                            setState(() {
+                                              _selectedLocation = _userLocation;
+                                              _updateMarkers();
+                                            });
+
+                                            // Update municipality info
+                                            await _getMunicipalityDetails(
+                                                Position(
+                                              latitude: _userLocation!.latitude,
+                                              longitude:
+                                                  _userLocation!.longitude,
+                                              timestamp: DateTime.now(),
+                                              accuracy: 0,
+                                              altitude: 0,
+                                              heading: 0,
+                                              speed: 0,
+                                              speedAccuracy: 0,
+                                              altitudeAccuracy: 0,
+                                              headingAccuracy: 0,
+                                            ));
+
+                                            _showSnackBar(
+                                                "Centré sur votre position",
+                                                isError: false);
+                                          } else {
+                                            // Try to get location again if not available
+                                            await _getCurrentLocation();
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    
-                    // Zoom Out Button
-                    Container(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            spreadRadius: 1,
-                            blurRadius: 3,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: Icon(Icons.remove, color: theme.colorScheme.onSurface),
-                        iconSize: 20,
-                        padding: const EdgeInsets.all(8),
-                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                        onPressed: () {
-                          if (_mapController != null) {
-                            final currentZoom = _mapController!.camera.zoom;
-                            if (currentZoom > 5) {
-                              _mapController!.move(
-                                _mapController!.camera.center, 
-                                currentZoom - 1
-                              );
-                            }
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // My Location Button
-              Positioned(
-                right: 10,
-                bottom: 10,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(4),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 3,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.my_location, 
-                      color: _selectedLocation == _userLocation 
-                          ? theme.colorScheme.primary 
-                          : theme.colorScheme.onSurface
-                    ),
-                    iconSize: 20,
-                    padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                    onPressed: () async {
-                      if (_userLocation != null && _mapController != null) {
-                        // Move map to user location
-                        _mapController!.move(_userLocation!, 15);
-                        
-                        // Set selected location to user location
-                        setState(() {
-                          _selectedLocation = _userLocation;
-                          _updateMarkers();
-                        });
-                        
-                        // Update municipality info
-                        await _getMunicipalityDetails(Position(
-                          latitude: _userLocation!.latitude,
-                          longitude: _userLocation!.longitude,
-                          timestamp: DateTime.now(),
-                          accuracy: 0,
-                          altitude: 0,
-                          heading: 0,
-                          speed: 0,
-                          speedAccuracy: 0,
-                          altitudeAccuracy: 0,
-                          headingAccuracy: 0,
-                        ));
-                        
-                        _showSnackBar("Centré sur votre position", isError: false);
-                      } else {
-                        // Try to get location again if not available
-                        await _getCurrentLocation();
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-  ),
-),
-                   if (_selectedLocation != null) 
+                    if (_selectedLocation != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(
                           'Lat: ${_selectedLocation!.latitude.toStringAsFixed(5)}, Lon: ${_selectedLocation!.longitude.toStringAsFixed(5)}',
-                          style: TextStyle(fontSize: 12, color: secondaryTextColor),
+                          style: TextStyle(
+                              fontSize: 12, color: secondaryTextColor),
                         ),
                       )
                   ],
@@ -1056,7 +1180,10 @@ Container(
                       style: _attachmentButtonStyle(theme: theme),
                     ),
                     const SizedBox(height: 8),
-                    ..._documentFiles.map((file) => _buildFileInfo(file.name, () => setState(() => _documentFiles.remove(file)), theme)),
+                    ..._documentFiles.map((file) => _buildFileInfo(
+                        file.name,
+                        () => setState(() => _documentFiles.remove(file)),
+                        theme)),
                   ],
                 ),
               ),
@@ -1077,13 +1204,18 @@ Container(
                         ElevatedButton.icon(
                           icon: const Icon(Icons.camera_alt),
                           label: const Text('Caméra'),
-                          onPressed: _photoFiles.length < 3 ? () => _pickImage(ImageSource.camera) : null,
-                          style: _attachmentButtonStyle(theme: theme, isPrimary: true),
+                          onPressed: _photoFiles.length < 3
+                              ? () => _pickImage(ImageSource.camera)
+                              : null,
+                          style: _attachmentButtonStyle(
+                              theme: theme, isPrimary: true),
                         ),
                         ElevatedButton.icon(
                           icon: const Icon(Icons.photo_library),
                           label: const Text('Galerie'),
-                          onPressed: _photoFiles.length < 3 ? () => _pickImage(ImageSource.gallery) : null,
+                          onPressed: _photoFiles.length < 3
+                              ? () => _pickImage(ImageSource.gallery)
+                              : null,
                           style: _attachmentButtonStyle(theme: theme),
                         ),
                       ],
@@ -1092,7 +1224,9 @@ Container(
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: _photoFiles.map((file) => _buildImageThumbnail(file, theme)).toList(),
+                      children: _photoFiles
+                          .map((file) => _buildImageThumbnail(file, theme))
+                          .toList(),
                     ),
                   ],
                 ),
@@ -1115,24 +1249,30 @@ Container(
                         ElevatedButton.icon(
                           icon: const Icon(Icons.videocam),
                           label: const Text('Enregistrer'),
-                          onPressed: _videoFile == null ? () => _pickOrRecordVideo(ImageSource.camera) : null,
-                          style: _attachmentButtonStyle(theme: theme, isPrimary: true),
+                          onPressed: _videoFile == null
+                              ? () => _pickOrRecordVideo(ImageSource.camera)
+                              : null,
+                          style: _attachmentButtonStyle(
+                              theme: theme, isPrimary: true),
                         ),
                         // Pick Video Button
                         ElevatedButton.icon(
                           icon: const Icon(Icons.video_library),
                           label: const Text('Galerie'),
-                          onPressed: _videoFile == null ? () => _pickOrRecordVideo(ImageSource.gallery) : null,
+                          onPressed: _videoFile == null
+                              ? () => _pickOrRecordVideo(ImageSource.gallery)
+                              : null,
                           style: _attachmentButtonStyle(theme: theme),
                         ),
                       ],
                     ),
                     if (_videoFile != null)
-                       _buildFileInfo(p.basename(_videoFile!.path), () => setState(() => _videoFile = null), theme),
+                      _buildFileInfo(p.basename(_videoFile!.path),
+                          () => setState(() => _videoFile = null), theme),
                   ],
                 ),
               ),
-              // --- End Video Section --- 
+              // --- End Video Section ---
               const SizedBox(height: 32),
 
               // Submit Button
@@ -1144,9 +1284,12 @@ Container(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,
                           foregroundColor: onPrimaryColor,
-                          padding: const EdgeInsets.symmetric(horizontal: 64, vertical: 16),
-                          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 64, vertical: 16),
+                          textStyle: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
                         ),
                         child: const Text('ENVOYER'),
                       ),
@@ -1159,23 +1302,30 @@ Container(
     );
   }
 
-  // --- Helper Widgets using Theme --- 
+  // --- Helper Widgets using Theme ---
 
-  InputDecoration _inputDecoration({required String hintText, IconData? icon, required ThemeData theme}) {
+  InputDecoration _inputDecoration(
+      {required String hintText, IconData? icon, required ThemeData theme}) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7), fontSize: 14),
-      prefixIcon: icon != null ? Icon(icon, color: theme.colorScheme.primary, size: 20) : null,
+      hintStyle: TextStyle(
+          color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+          fontSize: 14),
+      prefixIcon: icon != null
+          ? Icon(icon, color: theme.colorScheme.primary, size: 20)
+          : null,
       filled: true,
       fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.5)),
+        borderSide:
+            BorderSide(color: theme.colorScheme.outline.withOpacity(0.5)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.5)),
+        borderSide:
+            BorderSide(color: theme.colorScheme.outline.withOpacity(0.5)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -1183,7 +1333,8 @@ Container(
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: theme.colorScheme.error.withOpacity(0.7), width: 1),
+        borderSide: BorderSide(
+            color: theme.colorScheme.error.withOpacity(0.7), width: 1),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -1238,11 +1389,17 @@ Container(
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+                      style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface),
                     ),
                     Text(
                       subtitle,
-                      style: GoogleFonts.inter(fontSize: 12, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7)),
+                      style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurfaceVariant
+                              .withOpacity(0.7)),
                     ),
                   ],
                 ),
@@ -1256,32 +1413,48 @@ Container(
     );
   }
 
-  ButtonStyle _attachmentButtonStyle({required ThemeData theme, bool isPrimary = false}) {
+  ButtonStyle _attachmentButtonStyle(
+      {required ThemeData theme, bool isPrimary = false}) {
     return ElevatedButton.styleFrom(
-      backgroundColor: isPrimary ? theme.colorScheme.primaryContainer : theme.colorScheme.secondaryContainer,
-      foregroundColor: isPrimary ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSecondaryContainer,
+      backgroundColor: isPrimary
+          ? theme.colorScheme.primaryContainer
+          : theme.colorScheme.secondaryContainer,
+      foregroundColor: isPrimary
+          ? theme.colorScheme.onPrimaryContainer
+          : theme.colorScheme.onSecondaryContainer,
       elevation: 0,
-      side: BorderSide(color: isPrimary ? theme.colorScheme.primary.withOpacity(0.3) : theme.colorScheme.outline.withOpacity(0.5)),
+      side: BorderSide(
+          color: isPrimary
+              ? theme.colorScheme.primary.withOpacity(0.3)
+              : theme.colorScheme.outline.withOpacity(0.5)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       textStyle: GoogleFonts.inter(fontWeight: FontWeight.w500),
     );
   }
 
-  Widget _buildFileInfo(String fileName, VoidCallback onClear, ThemeData theme) {
+  Widget _buildFileInfo(
+      String fileName, VoidCallback onClear, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.only(top: 8.0),
       child: Row(
         children: [
-          Icon(Icons.insert_drive_file_outlined, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7), size: 16),
+          Icon(Icons.insert_drive_file_outlined,
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+              size: 16),
           const SizedBox(width: 8),
-          Expanded(child: Text(fileName, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)),
+          Expanded(
+              child: Text(fileName,
+                  style: const TextStyle(fontSize: 13),
+                  overflow: TextOverflow.ellipsis)),
           SizedBox(
             height: 24,
             width: 24,
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: Icon(Icons.close, size: 16, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7)),
+              icon: Icon(Icons.close,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7)),
               onPressed: onClear,
             ),
           ),
@@ -1310,7 +1483,9 @@ Container(
             width: 24,
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: Icon(Icons.cancel, color: theme.colorScheme.onSurface.withOpacity(0.6), size: 18),
+              icon: Icon(Icons.cancel,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  size: 18),
               onPressed: () => setState(() => _photoFiles.remove(file)),
             ),
           ),

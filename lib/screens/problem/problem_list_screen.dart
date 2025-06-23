@@ -17,7 +17,7 @@ class ProblemListScreen extends StatefulWidget {
 class _ProblemListScreenState extends State<ProblemListScreen> {
   final ScrollController _scrollController = ScrollController();
   String _filterStatus = 'ALL';
-  
+
   @override
   void initState() {
     super.initState();
@@ -27,10 +27,15 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
     });
   }
 
+  // Pull-to-refresh handler
+  Future<void> _onRefresh() async {
+    await Provider.of<ProblemProvider>(context, listen: false).fetchProblems();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -46,6 +51,12 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: _showFilterDialog,
+          ),
+          // Add refresh button in app bar for additional refresh option
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _onRefresh,
+            tooltip: 'Actualiser',
           ),
         ],
       ),
@@ -64,9 +75,13 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
                 : problemProvider.problems
                     .where((problem) => problem['status'] == _filterStatus)
                     .toList();
-                    
+
             return RefreshIndicator(
-              onRefresh: () => problemProvider.fetchProblems(),
+              onRefresh: _onRefresh,
+              color: colors.primary,
+              backgroundColor: colors.surface,
+              strokeWidth: 2.5,
+              displacement: 40.0,
               child: CustomScrollView(
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -75,7 +90,7 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
                   SliverToBoxAdapter(
                     child: _buildFilterChips(colors),
                   ),
-                  
+
                   // Problem count
                   SliverToBoxAdapter(
                     child: Padding(
@@ -89,7 +104,7 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
                       ),
                     ),
                   ),
-                  
+
                   // Problem list
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
@@ -100,7 +115,7 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
                       childCount: filteredProblems.length,
                     ),
                   ),
-                  
+
                   // Bottom padding
                   const SliverToBoxAdapter(
                     child: SizedBox(height: 80),
@@ -123,7 +138,7 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
       ),
     );
   }
-  
+
   Widget _buildFilterChips(ColorScheme colors) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -143,10 +158,10 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
       ),
     );
   }
-  
+
   Widget _buildFilterChip(String value, String label, ColorScheme colors) {
     final isSelected = _filterStatus == value;
-    
+
     return FilterChip(
       selected: isSelected,
       label: Text(
@@ -175,25 +190,26 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
       },
     );
   }
-  
-  Widget _buildProblemCard(Map<String, dynamic> problem, ColorScheme colors, int index) {
+
+  Widget _buildProblemCard(
+      Map<String, dynamic> problem, ColorScheme colors, int index) {
     final statusColors = {
       'PENDING': colors.secondary,
       'IN_PROGRESS': Colors.blue,
       'RESOLVED': Colors.green,
       'REJECTED': Colors.red,
     };
-    
+
     final statusLabels = {
       'PENDING': 'En attente',
       'IN_PROGRESS': 'En cours',
       'RESOLVED': 'Résolu',
       'REJECTED': 'Rejeté',
     };
-    
+
     final statusColor = statusColors[problem['status']] ?? colors.primary;
     final statusLabel = statusLabels[problem['status']] ?? 'Inconnu';
-    
+
     // Format date
     String formattedDate = '';
     try {
@@ -202,7 +218,7 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
     } catch (e) {
       formattedDate = 'Date inconnue';
     }
-    
+
     return Card(
       margin: EdgeInsets.fromLTRB(16, index == 0 ? 0 : 8, 16, 8),
       elevation: 2,
@@ -211,12 +227,12 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
         borderRadius: BorderRadius.circular(16),
         onTap: () {
           Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => ProblemDetailScreen(problemId: problem['id']),
-  ),
-);
-
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  ProblemDetailScreen(problemId: problem['id']),
+            ),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -249,13 +265,14 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Category
               if (problem['category'] != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: colors.primaryContainer.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(4),
@@ -269,9 +286,9 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
                     ),
                   ),
                 ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Description
               Text(
                 problem['description'] ?? 'Pas de description',
@@ -282,9 +299,9 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Location
               if (problem['municipality'] != null)
                 Row(
@@ -308,7 +325,7 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
                     ),
                   ],
                 ),
-              
+
               // Show image thumbnail if available
               if (problem['image'] != null)
                 Padding(
@@ -340,11 +357,10 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
           ),
         ),
       ),
-    ).animate()
-      .fadeIn(duration: 300.ms, delay: (50 * index).ms)
-      .slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuad);
+    ).animate().fadeIn(duration: 300.ms, delay: (50 * index).ms).slideY(
+        begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuad);
   }
-  
+
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -374,7 +390,7 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
       },
     );
   }
-  
+
   Widget _buildFilterOption(String value, String label) {
     return RadioListTile<String>(
       title: Text(label),
@@ -388,7 +404,7 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
       },
     );
   }
-  
+
   Widget _buildLoadingState(ColorScheme colors) {
     return Center(
       child: Column(
@@ -407,90 +423,106 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
       ),
     );
   }
-  
+
   Widget _buildErrorState(String errorMessage, ColorScheme colors) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 60,
-              color: colors.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Erreur de chargement',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: colors.onBackground,
+    return RefreshIndicator(
+      onRefresh: _onRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: MediaQuery.of(context).size.height - 200,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 60,
+                    color: colors.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Erreur de chargement',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: colors.onBackground,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    errorMessage,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: colors.onBackground.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _onRefresh,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Réessayer'),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              errorMessage,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: colors.onBackground.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () {
-                Provider.of<ProblemProvider>(context, listen: false).fetchProblems();
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
-  
+
   Widget _buildEmptyState(ColorScheme colors) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: 60,
-              color: colors.onBackground.withOpacity(0.4),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Aucun problème signalé',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: colors.onBackground,
+    return RefreshIndicator(
+      onRefresh: _onRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: MediaQuery.of(context).size.height - 200,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search_off,
+                    size: 60,
+                    color: colors.onBackground.withOpacity(0.4),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Aucun problème signalé',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: colors.onBackground,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Vous n\'avez pas encore signalé de problème. Utilisez le bouton ci-dessous pour signaler un nouveau problème.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: colors.onBackground.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/report_problem');
+                    },
+                    icon: const Icon(Icons.add),
+                    label: const Text('Signaler un problème'),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Vous n\'avez pas encore signalé de problème. Utilisez le bouton ci-dessous pour signaler un nouveau problème.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: colors.onBackground.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, '/report_problem');
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Signaler un problème'),
-            ),
-          ],
+          ),
         ),
       ),
     );

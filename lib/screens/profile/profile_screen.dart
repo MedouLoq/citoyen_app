@@ -8,9 +8,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // For token
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+
 // --- Configuration ---
 // Replace with your actual API base URL
-const String API_BASE_URL = "http://10.0.2.2:8000"; 
+const String API_BASE_URL = "http://10.0.2.2:8000";
 const String PROFILE_URL = "$API_BASE_URL/api/profile/";
 const String PROFILE_UPDATE_URL = "$API_BASE_URL/api/profile/update/";
 
@@ -51,21 +52,25 @@ class CitizenProfile {
   final String? nni;
   final String? address;
   final String? profilePictureUrl;
+  final String? municipality;
   // Add municipality if needed
 
-  CitizenProfile({
-    required this.fullName,
-    this.nni,
-    this.address,
-    this.profilePictureUrl,
-  });
+  CitizenProfile(
+      {required this.fullName,
+      this.nni,
+      this.address,
+      this.profilePictureUrl,
+      this.municipality,
+      t});
 
   factory CitizenProfile.fromJson(Map<String, dynamic> json) {
     return CitizenProfile(
       fullName: json["full_name"] ?? "",
       nni: json["nni"],
       address: json["address"],
-      profilePictureUrl: json["profile_picture_url"], // Use the URL field from serializer
+      municipality: json[""],
+      profilePictureUrl:
+          json["profile_picture_url"], // Use the URL field from serializer
     );
   }
 }
@@ -105,24 +110,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
- Future<String?> _getAuthToken() async {
-  String? token;
-  if (kIsWeb) {
-    final prefs = await SharedPreferences.getInstance();
-    token = prefs.getString('auth_token');
-    print("Retrieved token from SharedPreferences (Web): $token");
-  } else {
-    const storage = FlutterSecureStorage();
-    token = await storage.read(key: 'auth_token');
-    print("Retrieved token from FlutterSecureStorage (Mobile): $token");
+  Future<String?> _getAuthToken() async {
+    String? token;
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      token = prefs.getString('auth_token');
+      print("Retrieved token from SharedPreferences (Web): $token");
+    } else {
+      const storage = FlutterSecureStorage();
+      token = await storage.read(key: 'auth_token');
+      print("Retrieved token from FlutterSecureStorage (Mobile): $token");
+    }
+    if (token == null || token.isEmpty) {
+      print("Warning: Auth token is null or empty.");
+    }
+    return token;
   }
-  if (token == null || token.isEmpty) {
-    print("Warning: Auth token is null or empty.");
-  }
-  return token;
-}
-
-
 
   Future<void> _fetchProfile() async {
     setState(() {
@@ -144,7 +147,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final response = await http.get(
         Uri.parse(PROFILE_URL),
         headers: {
-          "Authorization": "Token $token", // Or "Bearer $token" depending on your auth
+          "Authorization":
+              "Token $token", // Or "Bearer $token" depending on your auth
           "Content-Type": "application/json",
         },
       );
@@ -156,7 +160,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _userProfile = UserProfile.fromJson(data);
           // Initialize controllers with fetched data
-          _fullNameController.text = _userProfile?.citizenProfile?.fullName ?? "";
+          _fullNameController.text =
+              _userProfile?.citizenProfile?.fullName ?? "";
           _addressController.text = _userProfile?.citizenProfile?.address ?? "";
           _isLoading = false;
         });
@@ -178,7 +183,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _pickImage(ImageSource source) async {
     try {
       final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: source, imageQuality: 80);
+      final pickedFile =
+          await picker.pickImage(source: source, imageQuality: 80);
 
       if (pickedFile != null) {
         setState(() {
@@ -188,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to pick image: $e")), 
+        SnackBar(content: Text("Failed to pick image: $e")),
       );
     }
   }
@@ -215,10 +221,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.of(context).pop();
               },
             ),
-             if (_selectedImageFile != null || _userProfile?.citizenProfile?.profilePictureUrl != null)
+            if (_selectedImageFile != null ||
+                _userProfile?.citizenProfile?.profilePictureUrl != null)
               ListTile(
-                leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                title: Text("Remove Picture", style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                leading: Icon(Icons.delete_outline,
+                    color: Theme.of(context).colorScheme.error),
+                title: Text("Remove Picture",
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error)),
                 onTap: () {
                   setState(() {
                     _selectedImageFile = null; // Mark for removal on save
@@ -253,7 +263,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
-      var request = http.MultipartRequest("PATCH", Uri.parse(PROFILE_UPDATE_URL));
+      var request =
+          http.MultipartRequest("PATCH", Uri.parse(PROFILE_UPDATE_URL));
       request.headers["Authorization"] = "Token $token"; // Or Bearer
       // Add text fields
       request.fields["full_name"] = _fullNameController.text;
@@ -266,19 +277,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           "profile_picture", // Must match the field name in Django serializer
           _selectedImageFile!.path,
         ));
-      } else if (_userProfile?.citizenProfile?.profilePictureUrl != null && _selectedImageFile == null) {
-         // If _selectedImageFile is explicitly null after having an image, 
-         // it means user wants to remove it. Send an empty string or handle null on backend.
-         // Sending an empty value for the field often signals clearing it in DRF.
-         // Check your CitizenProfileUpdateSerializer logic for how it handles null/empty.
-         // If sending null is needed, you might need a different approach than MultipartRequest
-         // or adjust the backend to interpret an empty field value as null.
-         // For simplicity here, we assume sending no file means no change, 
-         // and clearing requires a separate action or backend logic adjustment.
-         // Let's assume for now we only handle *setting* a new image.
-         // To handle *clearing*, you might need to send a specific flag or adjust the backend.
-         // A common pattern is to send `profile_picture=` (empty value) to clear.
-         // request.fields["profile_picture"] = ""; // Uncomment if backend handles empty string for clearing
+      } else if (_userProfile?.citizenProfile?.profilePictureUrl != null &&
+          _selectedImageFile == null) {
+        // If _selectedImageFile is explicitly null after having an image,
+        // it means user wants to remove it. Send an empty string or handle null on backend.
+        // Sending an empty value for the field often signals clearing it in DRF.
+        // Check your CitizenProfileUpdateSerializer logic for how it handles null/empty.
+        // If sending null is needed, you might need a different approach than MultipartRequest
+        // or adjust the backend to interpret an empty field value as null.
+        // For simplicity here, we assume sending no file means no change,
+        // and clearing requires a separate action or backend logic adjustment.
+        // Let's assume for now we only handle *setting* a new image.
+        // To handle *clearing*, you might need to send a specific flag or adjust the backend.
+        // A common pattern is to send `profile_picture=` (empty value) to clear.
+        // request.fields["profile_picture"] = ""; // Uncomment if backend handles empty string for clearing
       }
 
       final streamedResponse = await request.send();
@@ -289,24 +301,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
-          _userProfile = UserProfile.fromJson(data); // Update profile with response
-          _fullNameController.text = _userProfile?.citizenProfile?.fullName ?? "";
+          _userProfile =
+              UserProfile.fromJson(data); // Update profile with response
+          _fullNameController.text =
+              _userProfile?.citizenProfile?.fullName ?? "";
           _addressController.text = _userProfile?.citizenProfile?.address ?? "";
-          _selectedImageFile = null; // Clear selected file after successful upload
+          _selectedImageFile =
+              null; // Clear selected file after successful upload
           _isEditing = false; // Exit editing mode
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Profile updated successfully!"), backgroundColor: Colors.green),
+          const SnackBar(
+              content: Text("Profile updated successfully!"),
+              backgroundColor: Colors.green),
         );
       } else {
-         final errorData = jsonDecode(utf8.decode(response.bodyBytes));
+        final errorData = jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
           _isLoading = false;
-          _errorMessage = "Failed to update profile: ${response.statusCode} - ${errorData.toString()}";
+          _errorMessage =
+              "Failed to update profile: ${response.statusCode} - ${errorData.toString()}";
         });
-         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Update failed: ${errorData.toString()}"), backgroundColor: Colors.red),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text("Update failed: ${errorData.toString()}"),
+              backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -315,9 +335,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = false;
         _errorMessage = "An error occurred during update: $e";
       });
-       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("An error occurred: $e"), backgroundColor: Colors.red),
-        );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text("An error occurred: $e"),
+            backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -329,18 +351,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
-        title: Text(_isEditing ? "Modifier le Profil" : "Mon Profil", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+        title: Text(_isEditing ? "Modifier le Profil" : "Mon Profil",
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
         backgroundColor: colors.surface, // Use surface for AppBar
         elevation: 1,
-        leading: _isEditing 
-          ? IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() {
-               _isEditing = false;
-               _selectedImageFile = null; // Discard image changes on cancel
-               // Reset controllers to original values
-               _fullNameController.text = _userProfile?.citizenProfile?.fullName ?? "";
-               _addressController.text = _userProfile?.citizenProfile?.address ?? "";
-             }))
-          : null,
+        leading: _isEditing
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() {
+                      _isEditing = false;
+                      _selectedImageFile =
+                          null; // Discard image changes on cancel
+                      // Reset controllers to original values
+                      _fullNameController.text =
+                          _userProfile?.citizenProfile?.fullName ?? "";
+                      _addressController.text =
+                          _userProfile?.citizenProfile?.address ?? "";
+                    }))
+            : null,
         actions: [
           if (!_isEditing && _userProfile != null)
             IconButton(
@@ -350,7 +378,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           if (_isEditing)
             IconButton(
-              icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.check),
+              icon: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.check),
               tooltip: "Sauvegarder",
               onPressed: _isLoading ? null : _updateProfile,
             ),
@@ -372,9 +405,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 50),
+              Icon(Icons.error_outline,
+                  color: Theme.of(context).colorScheme.error, size: 50),
               const SizedBox(height: 16),
-              Text("Error", style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Theme.of(context).colorScheme.error)),
+              Text("Error",
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(color: Theme.of(context).colorScheme.error)),
               const SizedBox(height: 8),
               Text(_errorMessage!, textAlign: TextAlign.center),
               const SizedBox(height: 20),
@@ -406,7 +444,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildInfoSection(context),
             const SizedBox(height: 32),
             if (!_isEditing) _buildActionButtons(context),
-          ].animate(interval: 100.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, curve: Curves.easeOutCubic),
+          ]
+              .animate(interval: 100.ms)
+              .fadeIn(duration: 300.ms)
+              .slideY(begin: 0.1, curve: Curves.easeOutCubic),
         ),
       ),
     );
@@ -416,11 +457,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final colors = Theme.of(context).colorScheme;
     final citizenProfile = _userProfile?.citizenProfile;
     final currentImageUrl = citizenProfile?.profilePictureUrl;
-    final placeholderInitial = citizenProfile?.fullName.isNotEmpty == true ? citizenProfile!.fullName[0].toUpperCase() : "U";
+    final placeholderInitial = citizenProfile?.fullName.isNotEmpty == true
+        ? citizenProfile!.fullName[0].toUpperCase()
+        : "U";
 
     ImageProvider? backgroundImage;
     if (_selectedImageFile != null) {
-      backgroundImage = FileImage(_selectedImageFile!); 
+      backgroundImage = FileImage(_selectedImageFile!);
     } else if (currentImageUrl != null && currentImageUrl.isNotEmpty) {
       backgroundImage = NetworkImage(currentImageUrl);
     }
@@ -438,7 +481,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 backgroundImage: backgroundImage,
                 backgroundColor: colors.surfaceVariant,
                 child: backgroundImage == null
-                    ? Text(placeholderInitial, style: GoogleFonts.inter(fontSize: 50, fontWeight: FontWeight.bold, color: colors.primary))
+                    ? Text(placeholderInitial,
+                        style: GoogleFonts.inter(
+                            fontSize: 50,
+                            fontWeight: FontWeight.bold,
+                            color: colors.primary))
                     : null,
               ),
             ),
@@ -455,7 +502,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     customBorder: const CircleBorder(),
                     child: const Padding(
                       padding: EdgeInsets.all(8.0),
-                      child: Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                      child:
+                          Icon(Icons.camera_alt, color: Colors.white, size: 20),
                     ),
                   ),
                 ),
@@ -467,16 +515,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (!_isEditing)
           Text(
             citizenProfile?.fullName ?? _userProfile?.username ?? "Utilisateur",
-            style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onBackground),
+            style: GoogleFonts.inter(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onBackground),
             textAlign: TextAlign.center,
           ),
-        if (!_isEditing)
-          const SizedBox(height: 4),
+        if (!_isEditing) const SizedBox(height: 4),
         // Display Phone or Email (non-editable)
         if (!_isEditing)
           Text(
             _userProfile?.phoneNumber ?? _userProfile?.email ?? "",
-            style: GoogleFonts.inter(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: GoogleFonts.inter(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
       ],
     );
@@ -489,13 +541,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Informations Personnelles", style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: colors.onSurface)),
+        Text("Informations Personnelles",
+            style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: colors.onSurface)),
         const SizedBox(height: 16),
         _buildEditableTextField(
           controller: _fullNameController,
           label: "Nom complet",
           icon: Icons.person_outline,
-          validator: (value) => value == null || value.isEmpty ? "Le nom ne peut pas être vide" : null,
+          validator: (value) => value == null || value.isEmpty
+              ? "Le nom ne peut pas être vide"
+              : null,
         ),
         const SizedBox(height: 16),
         _buildEditableTextField(
@@ -507,8 +565,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 16),
         // Read-only fields (Example: NNI, Phone)
-        _buildReadOnlyInfoTile(context, Icons.badge_outlined, "NNI", citizenProfile?.nni ?? "Non défini"),
-        _buildReadOnlyInfoTile(context, Icons.phone_outlined, "Téléphone", _userProfile?.phoneNumber ?? "Non défini"),
+        _buildReadOnlyInfoTile(context, Icons.badge_outlined, "NNI",
+            citizenProfile?.nni ?? "Non défini"),
+        _buildReadOnlyInfoTile(context, Icons.phone_outlined, "Téléphone",
+            _userProfile?.phoneNumber ?? "Non défini"),
         // Add Municipality if needed
       ],
     );
@@ -528,30 +588,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
       style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        labelStyle: GoogleFonts.inter(
+            color: Theme.of(context).colorScheme.onSurfaceVariant),
         prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
         filled: true,
-        fillColor: _isEditing ? Theme.of(context).colorScheme.surface : Colors.transparent,
+        fillColor: _isEditing
+            ? Theme.of(context).colorScheme.surface
+            : Colors.transparent,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: _isEditing ? BorderSide(color: Theme.of(context).colorScheme.outline) : BorderSide.none,
+          borderSide: _isEditing
+              ? BorderSide(color: Theme.of(context).colorScheme.outline)
+              : BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: _isEditing ? BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)) : BorderSide.none,
+          borderSide: _isEditing
+              ? BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.5))
+              : BorderSide.none,
         ),
-        focusedBorder: _isEditing ? OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
-        ) : null,
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        focusedBorder: _isEditing
+            ? OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary, width: 2),
+              )
+            : null,
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       ),
       validator: _isEditing ? validator : null,
       readOnly: !_isEditing,
     );
   }
 
-  Widget _buildReadOnlyInfoTile(BuildContext context, IconData icon, String label, String value) {
+  Widget _buildReadOnlyInfoTile(
+      BuildContext context, IconData icon, String label, String value) {
     final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -567,9 +640,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: GoogleFonts.inter(fontSize: 12, color: colors.onSurfaceVariant)),
+              Text(label,
+                  style: GoogleFonts.inter(
+                      fontSize: 12, color: colors.onSurfaceVariant)),
               const SizedBox(height: 2),
-              Text(value, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500, color: colors.onSurface)),
+              Text(value,
+                  style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: colors.onSurface)),
             ],
           ),
         ],
@@ -582,49 +661,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Add other actions like Change Password, Logout etc.
     return Column(
       children: [
-         _buildProfileOption(context, Icons.lock_outline_rounded, "Changer le mot de passe", () { /* TODO */ }),
-         _buildProfileOption(context, Icons.notifications_outlined, "Préférences de notification", () { /* TODO */ }),
-         _buildProfileOption(context, Icons.help_outline_rounded, "Aide et Support", () { /* TODO */ }),
-         const SizedBox(height: 24),
-         ElevatedButton.icon(
-           icon: Icon(Icons.logout_rounded, color: colors.onError),
-           label: Text("Se déconnecter", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onError)),
-           onPressed: () async {
-             // TODO: Implement proper logout (clear token, navigate)
-             final prefs = await SharedPreferences.getInstance();
-             await prefs.remove("auth_token");
-             if (mounted) {
-                // Navigate to login screen and remove all previous routes
-                // Navigator.of(context).pushAndRemoveUntil(...);
-                print("Logout Tapped - Implement Navigation");
-             }
-           },
-           style: ElevatedButton.styleFrom(
-             backgroundColor: colors.error,
-             minimumSize: const Size(double.infinity, 50),
-             padding: const EdgeInsets.symmetric(vertical: 14),
-             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-           ),
-         ),
+        _buildProfileOption(
+            context, Icons.lock_outline_rounded, "Changer le mot de passe", () {
+          /* TODO */
+        }),
+        _buildProfileOption(context, Icons.notifications_outlined,
+            "Préférences de notification", () {/* TODO */}),
+        _buildProfileOption(
+            context, Icons.help_outline_rounded, "Aide et Support", () {
+          /* TODO */
+        }),
+        const SizedBox(height: 24),
+        ElevatedButton.icon(
+          icon: Icon(Icons.logout_rounded, color: colors.onError),
+          label: Text("Se déconnecter",
+              style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: colors.onError)),
+          onPressed: () async {
+            // TODO: Implement proper logout (clear token, navigate)
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.remove("auth_token");
+            if (mounted) {
+              // Navigate to login screen and remove all previous routes
+              // Navigator.of(context).pushAndRemoveUntil(...);
+              print("Logout Tapped - Implement Navigation");
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colors.error,
+            minimumSize: const Size(double.infinity, 50),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
       ],
     );
   }
 
   // Helper for action buttons (reusing from original code)
-  Widget _buildProfileOption(BuildContext context, IconData icon, String title, VoidCallback onTap, {Color? iconColor}) {
+  Widget _buildProfileOption(
+      BuildContext context, IconData icon, String title, VoidCallback onTap,
+      {Color? iconColor}) {
     final colors = Theme.of(context).colorScheme;
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colors.outline.withOpacity(0.3))
-      ),
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: colors.outline.withOpacity(0.3))),
       margin: const EdgeInsets.symmetric(vertical: 6),
       color: colors.surface,
       child: ListTile(
         leading: Icon(icon, color: iconColor ?? colors.primary, size: 22),
-        title: Text(title, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500, color: colors.onSurface)),
-        trailing: Icon(Icons.arrow_forward_ios_rounded, size: 18, color: colors.onSurfaceVariant),
+        title: Text(title,
+            style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: colors.onSurface)),
+        trailing: Icon(Icons.arrow_forward_ios_rounded,
+            size: 18, color: colors.onSurfaceVariant),
         onTap: onTap,
         splashColor: colors.primary.withOpacity(0.1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -632,4 +729,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-

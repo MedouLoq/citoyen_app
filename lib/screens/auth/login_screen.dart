@@ -10,7 +10,6 @@ import 'package:google_fonts/google_fonts.dart'; // Google Fonts (optional)
 import 'package:citoyen_app/widgets/custom_text_field.dart'; // Custom widgets (optional)
 import 'package:citoyen_app/screens/auth/register_screen.dart'; // Registration screen
 
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
@@ -49,18 +48,19 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = true;
       });
 
-      const String apiUrl = 'http://10.0.2.2:8000/api/login/'; // Replace with your API URL
+      const String apiUrl =
+          'http://10.0.2.2:8000/api/login/'; // Replace with your API URL
 
       try {
         final response = await http
             .post(
-          Uri.parse(apiUrl),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'identifier': _identifierController.text,
-            'password': _passwordController.text,
-          }),
-        )
+              Uri.parse(apiUrl),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'identifier': _identifierController.text,
+                'password': _passwordController.text,
+              }),
+            )
             .timeout(const Duration(seconds: 120));
 
         if (response.statusCode == 200) {
@@ -94,13 +94,15 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         }
       } catch (error) {
-        String errorMessage = 'Erreur de connexion. Veuillez vérifier votre connexion Internet.';
+        String errorMessage =
+            'Erreur de connexion. Veuillez vérifier votre connexion Internet.';
         if (error is FormatException) {
           errorMessage = 'Erreur de format de réponse du serveur';
         } else if (error is http.ClientException) {
           errorMessage = 'Erreur lors de la communication avec le serveur';
         } else if (error is TimeoutException) {
-          errorMessage = "Délai d'attente dépassé. Veuillez vérifier votre connexion.";
+          errorMessage =
+              "Délai d'attente dépassé. Veuillez vérifier votre connexion.";
         }
         print('Error during login: $error'); // Log the error
         if (mounted) {
@@ -207,28 +209,30 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                       child: Text(
                         'Mot de passe oublié?',
-                        style: GoogleFonts.inter(color: colors.primary, fontWeight: FontWeight.w500),
+                        style: GoogleFonts.inter(
+                            color: colors.primary, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ),
                   const SizedBox(height: 30),
                   _isLoading
                       ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
-                      ))
+                          child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(colors.primary),
+                        ))
                       : ElevatedButton(
-                    onPressed: _login,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text('Se connecter',
-                        style: GoogleFonts.inter(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
+                          onPressed: _login,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text('Se connecter',
+                              style: GoogleFonts.inter(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
+                        ),
                   const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -243,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Navigator.of(context).push(
                             MaterialPageRoute(
                                 builder: (context) =>
-                                const RegisterScreen()), // Navigate to registration
+                                    const RegisterScreen()), // Navigate to registration
                           );
                         },
                         child: Text(

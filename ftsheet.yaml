@@ -1,0 +1,4 @@
+input_file: lib/l10n/i18n.yaml
+output_dir: lib/l10n
+langs: [en, fr, ar]
+fallback_lang: fr
