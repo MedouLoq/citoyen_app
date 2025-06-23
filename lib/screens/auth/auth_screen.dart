@@ -495,18 +495,18 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             CustomTextField(
               controller: _loginIdentifierController,
               labelText: _selectedLanguage == 'ar'
-                  ? 'اسم المستخدم'
-                  : 'Nom d\'utilisateur',
+                  ? 'رقم الهاتف'
+                  : 'Numéro de téléphone',
               hintText: _selectedLanguage == 'ar'
-                  ? 'أدخل اسم المستخدم'
-                  : 'Entrez votre nom d\'utilisateur',
-              prefixIcon: Icons.person_outline,
-              keyboardType: TextInputType.text,
+                  ? 'أدخل رقم الهاتف'
+                  : 'Entrez votre numéro de téléphone',
+              prefixIcon: Icons.phone_outlined,
+              keyboardType: TextInputType.phone,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return _selectedLanguage == 'ar'
-                      ? 'يرجى إدخال اسم المستخدم'
-                      : 'Veuillez entrer votre nom d\'utilisateur';
+                      ? 'يرجى إدخال رقم الهاتف'
+                      : 'Veuillez entrer votre numéro de téléphone';
                 }
                 return null;
               },
