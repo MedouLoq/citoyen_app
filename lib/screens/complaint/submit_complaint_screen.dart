@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:provider/provider.dart'; // Added import
 import 'package:citoyen_app/providers/complaint_provider.dart'; // Adjust path as needed
 
@@ -46,6 +48,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   XFile? _photoFile;
   XFile? _videoFile;
   File? _voiceRecordFile;
+final AudioRecorder _audioRecorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isRecording = false;
+  bool _isPlaying = false;
+  String? _audioPath;
   PlatformFile? _preuveFile; // Changed from _evidenceFile to _preuveFile
 
   bool _isSubmitting = false;
@@ -96,6 +103,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
     _descriptionController.dispose();
     _animationController.dispose();
     _submitAnimationController.dispose();
+    _audioRecorder.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -199,14 +208,58 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
     if (video != null) {
       setState(() => _videoFile = video);
     }
+  }  Future<void> _recordVoice() async {
+    if (_isRecording) {
+      _audioRecorder.stop();
+      setState(() {
+        _isRecording = false;
+      });
+    } else {
+      if (await _audioRecorder.hasPermission()) {
+  final directory = await getApplicationDocumentsDirectory();
+  final path = p.join(directory.path, 'audio_${DateTime.now().millisecondsSinceEpoch}.m4a');
+  
+  // Fixed: Provide RecordConfig as first positional argument
+  await _audioRecorder.start(
+    const RecordConfig(
+      encoder: AudioEncoder.aacLc, // You can choose different encoders
+      bitRate: 128000,
+      sampleRate: 44100,
+    ),
+    path: path,
+  );
+  
+  setState(() {
+    _isRecording = true;
+    _audioPath = path;
+    _voiceRecordFile = File(path);
+  });
+}
+    }
   }
 
-  Future<void> _recordVoice() async {
-    // Placeholder for voice recording
-    _showSnackBar('Fonctionnalité d\'enregistrement vocal à implémenter');
-  }
-
-  Future<void> _pickPreuve() async {
+  Future<void> _playRecordedVoice() async {
+    if (_isPlaying) {
+      await _audioPlayer.pause();
+      setState(() {
+        _isPlaying = false;
+      });
+    } else {
+      if (_audioPath != null) {
+        await _audioPlayer.play(DeviceFileSource(_audioPath!));
+        setState(() {
+          _isPlaying = true;
+        });
+        _audioPlayer.onPlayerComplete.listen((event) {
+          setState(() {
+            _isPlaying = false;
+          });
+        });
+      } else {
+        _showSnackBar('Aucun enregistrement vocal disponible.');
+      }
+    }
+  }  Future<void> _pickPreuve() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
@@ -303,9 +356,16 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                             ),
                             const SizedBox(height: 24),
 
-                            // Attachments Section
+                            // Voice Recording Section
                             _buildAnimatedSection(
                               delay: 800,
+                              child: _buildVoiceRecordingSection(theme),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Attachments Section
+                            _buildAnimatedSection(
+                              delay: 1000,
                               child: _buildAttachmentsSection(theme),
                             ),
                             const SizedBox(height: 32),
@@ -865,3 +925,71 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
     );
   }
 }
+
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
+
+
+import 'package:path_provider/path_provider.dart';
+
+
+
+  Widget _buildVoiceRecordingSection(ThemeData theme) {
+    return _buildSection(
+      title: 'Enregistrement Vocal (Optionnel)',
+      isRequired: false,
+      icon: Icons.mic,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _recordVoice,
+                  icon: Icon(_isRecording ? Icons.stop : Icons.mic),
+                  label: Text(_isRecording ? 'Arrêter l\'enregistrement' : 'Enregistrer un message vocal'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _isRecording ? Colors.redAccent : theme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              if (_audioPath != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: _playRecordedVoice,
+                    icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+                    label: Text(_isPlaying ? 'Pause' : 'Écouter'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isPlaying ? Colors.orangeAccent : Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (_audioPath != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                'Fichier vocal: ${p.basename(_audioPath!)}',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+

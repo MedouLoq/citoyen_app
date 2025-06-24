@@ -23,7 +23,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
   late Animation<double> _fadeAnimation;
-
+  Map<String, dynamic>? _selectedMunicipality;
   String _selectedLanguage = 'ar'; // Default to Arabic
   bool _isLoading = false;
 
@@ -314,7 +314,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       String errorMessage = _selectedLanguage == 'ar'
           ? 'يرجى اختيار البلدية'
           : 'Veuillez sélectionner la municipalité de résidence';
-      if (_selectedMunicipalityId == null && mounted) {
+      if (_selectedMunicipality == null && mounted) {
         _showSnackBar(errorMessage);
       }
       setState(() {
@@ -719,9 +719,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               },
               itemAsString: (item) => item?['name'] ?? '',
               compareFn: (a, b) => a != null && b != null && a['id'] == b['id'],
-              selectedItem: _selectedMunicipalityId != null
-                  ? {'id': _selectedMunicipalityId, 'name': '…'}
-                  : null,
+              selectedItem:
+                  _selectedMunicipality, // Use the full object instead of creating a temporary one
               decoratorProps: DropDownDecoratorProps(
                 decoration: InputDecoration(
                   labelText:
@@ -763,10 +762,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               ),
               onChanged: (value) {
                 setState(() {
-                  _selectedMunicipalityId = value?['id']?.toString();
+                  _selectedMunicipality = value; // Store the full object
+                  _selectedMunicipalityId =
+                      value?['id']?.toString(); // Keep the ID for API calls
                 });
               },
             ),
+
             const SizedBox(height: 20),
 
             CustomTextField(
@@ -784,7 +786,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                       ? 'يرجى إدخال كلمة المرور'
                       : 'Veuillez entrer votre mot de passe';
                 }
-                if (value.length < 8) {
+                if (value.length < 6) {
                   return _selectedLanguage == 'ar'
                       ? 'يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل'
                       : 'Le mot de passe doit contenir au moins 8 caractères';
