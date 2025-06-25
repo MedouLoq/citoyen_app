@@ -1,5 +1,6 @@
 // lib/screens/submit_complaint_screen.dart
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -28,7 +29,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
 
   late AnimationController _animationController;
   late AnimationController _submitAnimationController;
-  late AnimationController _recordingAnimationController;
+  late AnimationController _recordingPulseController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
@@ -55,10 +56,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isRecording = false;
   bool _isPlaying = false;
+  bool _isStoppingRecording = false;
   String? _audioPath;
   Duration _recordingDuration = Duration.zero;
   Duration _playbackPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
+  Timer? _recordingTimer;
   PlatformFile? _preuveFile;
 
   bool _isSubmitting = false;
@@ -75,7 +78,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _recordingAnimationController = AnimationController(
+    _recordingPulseController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
@@ -106,9 +109,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
 
     _pulseAnimation = Tween<double>(
       begin: 1.0,
-      end: 1.2,
+      end: 1.1,
     ).animate(CurvedAnimation(
-      parent: _recordingAnimationController,
+      parent: _recordingPulseController,
       curve: Curves.easeInOut,
     ));
 
@@ -143,11 +146,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
 
   @override
   void dispose() {
+    _recordingTimer?.cancel();
     _subjectController.dispose();
     _descriptionController.dispose();
     _animationController.dispose();
     _submitAnimationController.dispose();
-    _recordingAnimationController.dispose();
+    _recordingPulseController.dispose();
     _audioRecorder.dispose();
     _audioPlayer.dispose();
     super.dispose();
@@ -255,26 +259,36 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   Future<void> _recordVoice() async {
-    if (_isRecording) {
+    if (_isRecording || _isStoppingRecording) {
       // Stop recording
-      try {
-        final path = await _audioRecorder.stop();
-        _recordingAnimationController.stop();
-        _recordingAnimationController.reset();
+      if (_isRecording && !_isStoppingRecording) {
+        setState(() {
+          _isStoppingRecording = true;
+        });
 
-        setState(() {
-          _isRecording = false;
-          if (path != null && path.isNotEmpty) {
-            _audioPath = path;
-            _voiceRecordFile = File(path);
-            print('Recording saved to: $path'); // Debug log
-          }
-        });
-      } catch (e) {
-        _showSnackBar('Erreur lors de l\'arrêt de l\'enregistrement: $e');
-        setState(() {
-          _isRecording = false;
-        });
+        try {
+          _recordingTimer?.cancel();
+          _recordingPulseController.stop();
+          _recordingPulseController.reset();
+
+          final path = await _audioRecorder.stop();
+
+          setState(() {
+            _isRecording = false;
+            _isStoppingRecording = false;
+            if (path != null && path.isNotEmpty) {
+              _audioPath = path;
+              _voiceRecordFile = File(path);
+              print('Recording saved to: $path'); // Debug log
+            }
+          });
+        } catch (e) {
+          _showSnackBar('Erreur lors de l\'arrêt de l\'enregistrement: $e');
+          setState(() {
+            _isRecording = false;
+            _isStoppingRecording = false;
+          });
+        }
       }
     } else {
       // Start recording
@@ -295,10 +309,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
 
           setState(() {
             _isRecording = true;
+            _isStoppingRecording = false;
             _recordingDuration = Duration.zero;
           });
 
-          _recordingAnimationController.repeat(reverse: true);
+          _recordingPulseController.repeat(reverse: true);
           _startRecordingTimer();
         } catch (e) {
           _showSnackBar('Erreur lors du démarrage de l\'enregistrement: $e');
@@ -310,17 +325,17 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   void _startRecordingTimer() {
-    if (_isRecording) {
-      Future.delayed(const Duration(seconds: 1), () {
-        if (_isRecording && mounted) {
-          setState(() {
-            _recordingDuration =
-                Duration(seconds: _recordingDuration.inSeconds + 1);
-          });
-          _startRecordingTimer();
-        }
-      });
-    }
+    _recordingTimer?.cancel();
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_isRecording && mounted) {
+        setState(() {
+          _recordingDuration =
+              Duration(seconds: _recordingDuration.inSeconds + 1);
+        });
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
   Future<void> _playRecordedVoice() async {
@@ -351,6 +366,18 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
       await _audioPlayer.stop();
     }
 
+    // Stop recording if recording
+    if (_isRecording) {
+      _recordingTimer?.cancel();
+      _recordingPulseController.stop();
+      _recordingPulseController.reset();
+      try {
+        await _audioRecorder.stop();
+      } catch (e) {
+        print('Error stopping recorder: $e');
+      }
+    }
+
     // Delete file if exists
     if (_audioPath != null) {
       try {
@@ -363,10 +390,13 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
       }
     }
 
+    // Reset all recording-related state completely
     setState(() {
       _audioPath = null;
       _voiceRecordFile = null;
       _isPlaying = false;
+      _isRecording = false;
+      _isStoppingRecording = false;
       _recordingDuration = Duration.zero;
       _playbackPosition = Duration.zero;
       _totalDuration = Duration.zero;
@@ -767,7 +797,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
       isRequired: false,
       icon: Icons.mic_rounded,
       child: Container(
-        padding: const EdgeInsets.all(24),
+        // Fixed height to prevent layout shifts and overflow
+        constraints: const BoxConstraints(
+          minHeight: 180,
+          maxHeight: 180,
+        ),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -788,14 +823,17 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
           ],
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Recording State: No recording exists
-            if (_audioPath == null && !_isRecording) ...[
+            if (_audioPath == null &&
+                !_isRecording &&
+                !_isStoppingRecording) ...[
               GestureDetector(
                 onTap: _recordVoice,
                 child: Container(
-                  width: 100,
-                  height: 100,
+                  width: 70,
+                  height: 70,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
@@ -812,100 +850,113 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                   child: const Icon(
                     Icons.mic_rounded,
                     color: Colors.white,
-                    size: 40,
+                    size: 30,
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 'Appuyez pour enregistrer',
                 style: GoogleFonts.inter(
-                  fontSize: 16,
+                  fontSize: 15,
                   color: const Color(0xFF4A5568),
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Enregistrez un message vocal pour accompagner votre réclamation',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: const Color(0xFF718096),
-                  height: 1.4,
+              const SizedBox(height: 6),
+              Flexible(
+                child: Text(
+                  'Enregistrez un message vocal pour accompagner votre réclamation',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: const Color(0xFF718096),
+                    height: 1.3,
+                  ),
                 ),
               ),
             ]
 
             // Recording State: Currently recording
-            else if (_isRecording) ...[
+            else if (_isRecording || _isStoppingRecording) ...[
               AnimatedBuilder(
                 animation: _pulseAnimation,
                 builder: (context, child) {
                   return Transform.scale(
-                    scale: _pulseAnimation.value,
+                    scale: _isStoppingRecording ? 1.0 : _pulseAnimation.value,
                     child: GestureDetector(
-                      onTap: _recordVoice,
+                      onTap: _isStoppingRecording ? null : _recordVoice,
                       child: Container(
-                        width: 100,
-                        height: 100,
+                        width: 70,
+                        height: 70,
                         decoration: BoxDecoration(
-                          color: Colors.red,
+                          color:
+                              _isStoppingRecording ? Colors.grey : Colors.red,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.4),
+                              color: (_isStoppingRecording
+                                      ? Colors.grey
+                                      : Colors.red)
+                                  .withOpacity(0.4),
                               blurRadius: 25,
                               spreadRadius: 5,
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.stop_rounded,
+                        child: Icon(
+                          _isStoppingRecording
+                              ? Icons.hourglass_empty
+                              : Icons.stop_rounded,
                           color: Colors.white,
-                          size: 40,
+                          size: 30,
                         ),
                       ),
                     ),
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
+                  color: (_isStoppingRecording ? Colors.grey : Colors.red)
+                      .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: _isStoppingRecording ? Colors.grey : Colors.red,
                         shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Text(
-                      'Enregistrement... ${_formatDuration(_recordingDuration)}',
+                      _isStoppingRecording
+                          ? 'Arrêt en cours...'
+                          : 'Enregistrement... ${_formatDuration(_recordingDuration)}',
                       style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.red,
+                        fontSize: 12,
+                        color: _isStoppingRecording ? Colors.grey : Colors.red,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
-                'Appuyez sur le bouton pour arrêter',
+                _isStoppingRecording
+                    ? 'Veuillez patienter...'
+                    : 'Appuyez sur le bouton pour arrêter',
                 style: GoogleFonts.inter(
-                  fontSize: 13,
+                  fontSize: 11,
                   color: const Color(0xFF718096),
                 ),
               ),
@@ -921,8 +972,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                   GestureDetector(
                     onTap: _playRecordedVoice,
                     child: Container(
-                      width: 70,
-                      height: 70,
+                      width: 55,
+                      height: 55,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: _isPlaying
@@ -939,7 +990,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                                     ? Colors.orange
                                     : const Color(0xFF38A169))
                                 .withOpacity(0.3),
-                            blurRadius: 15,
+                            blurRadius: 12,
                             spreadRadius: 2,
                           ),
                         ],
@@ -949,77 +1000,40 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                             ? Icons.pause_rounded
                             : Icons.play_arrow_rounded,
                         color: Colors.white,
-                        size: 32,
+                        size: 26,
                       ),
                     ),
                   ),
 
-                  // Recording info and waveform
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF38A169).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFF38A169).withOpacity(0.2),
+                  // Recording info
+                  Flexible(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.audiotrack_rounded,
+                          color: const Color(0xFF38A169),
+                          size: 20,
                         ),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.audiotrack_rounded,
-                                color: const Color(0xFF38A169),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Enregistrement prêt',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: const Color(0xFF38A169),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 4),
+                        Text(
+                          'Enregistrement prêt',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: const Color(0xFF38A169),
+                            fontWeight: FontWeight.w600,
                           ),
-                          const SizedBox(height: 8),
-                          // Progress bar
-                          if (_totalDuration.inMilliseconds > 0) ...[
-                            LinearProgressIndicator(
-                              value: _playbackPosition.inMilliseconds /
-                                  _totalDuration.inMilliseconds,
-                              backgroundColor:
-                                  const Color(0xFF38A169).withOpacity(0.2),
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF38A169)),
+                        ),
+                        if (_totalDuration.inMilliseconds > 0) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_formatDuration(_playbackPosition)} / ${_formatDuration(_totalDuration)}',
+                            style: GoogleFonts.inter(
+                              fontSize: 9,
+                              color: const Color(0xFF38A169),
                             ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  _formatDuration(_playbackPosition),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    color: const Color(0xFF38A169),
-                                  ),
-                                ),
-                                Text(
-                                  _formatDuration(_totalDuration),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    color: const Color(0xFF38A169),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                          ),
                         ],
-                      ),
+                      ],
                     ),
                   ),
 
@@ -1027,8 +1041,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                   GestureDetector(
                     onTap: _deleteRecording,
                     child: Container(
-                      width: 70,
-                      height: 70,
+                      width: 55,
+                      height: 55,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFFE53E3E), Color(0xFFC53030)],
@@ -1037,7 +1051,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                         boxShadow: [
                           BoxShadow(
                             color: const Color(0xFFE53E3E).withOpacity(0.3),
-                            blurRadius: 15,
+                            blurRadius: 12,
                             spreadRadius: 2,
                           ),
                         ],
@@ -1045,27 +1059,45 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                       child: const Icon(
                         Icons.delete_rounded,
                         color: Colors.white,
-                        size: 32,
+                        size: 26,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF38A169).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Appuyez sur lecture pour écouter votre enregistrement',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: const Color(0xFF38A169),
-                    fontWeight: FontWeight.w500,
+              const SizedBox(height: 12),
+              // Progress bar
+              if (_totalDuration.inMilliseconds > 0) ...[
+                Container(
+                  width: double.infinity,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF38A169).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(1.5),
                   ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: _totalDuration.inMilliseconds > 0
+                        ? (_playbackPosition.inMilliseconds /
+                                _totalDuration.inMilliseconds)
+                            .clamp(0.0, 1.0)
+                        : 0.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF38A169),
+                        borderRadius: BorderRadius.circular(1.5),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+              ],
+              Text(
+                'Appuyez sur lecture pour écouter votre enregistrement',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: const Color(0xFF38A169),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
