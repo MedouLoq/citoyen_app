@@ -187,10 +187,9 @@ class _SplashScreenState extends State<SplashScreen>
                                     ],
                                   ),
                                   child: const Center(
-                                    child: Icon(
-                                      Icons.flag_circle,
-                                      size: 80,
-                                      color: Color(0xFF0D47A1),
+                                    child: Image(
+                                      image: AssetImage(
+                                          'assets/images/belediyeti.png'),
                                     ),
                                   ),
                                 ),
