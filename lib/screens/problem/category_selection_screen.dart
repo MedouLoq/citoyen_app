@@ -2,15 +2,25 @@ import 'package:flutter/material.dart';
 // Assuming problem_details_screen.dart exists and defines ProblemDetailsScreen
 // Assuming category_model.dart exists and defines CategoryModel
 import 'report_problem_details_screen.dart';
+
 class CategorySelectionScreen extends StatelessWidget {
   // Replace with your actual category data, potentially fetched from an API
   final List<CategoryModel> categories = [
-    CategoryModel(id: '1', name: 'Routes', logoPath: 'assets/images/logo_routes.png'),
-    CategoryModel(id: '2', name: 'Eau', logoPath: 'assets/images/logo_eau.png'),
-    CategoryModel(id: '3', name: 'Électricité', logoPath: 'assets/images/logo_electricite.png'),
-    CategoryModel(id: '4', name: 'Déchets', logoPath: 'assets/images/logo_dechets.png'),
-    CategoryModel(id: '5', name: 'Permis de construire ou de démolir', logoPath: 'assets/images/logo_permis.png'),
-    CategoryModel(id: '6', name: 'Autre', logoPath: 'assets/images/logo_autre.png'),
+    CategoryModel(
+        id: '3', name: 'Routes', logoPath: 'assets/images/logo_routes.png'),
+    CategoryModel(id: '1', name: 'Eau', logoPath: 'assets/images/logo_eau.png'),
+    CategoryModel(
+        id: '2',
+        name: 'Électricité',
+        logoPath: 'assets/images/logo_electricite.png'),
+    CategoryModel(
+        id: '5', name: 'Déchets', logoPath: 'assets/images/logo_dechets.png'),
+    CategoryModel(
+        id: '6',
+        name: 'Permis de construire ou de démolir',
+        logoPath: 'assets/images/logo_permis.png'),
+    CategoryModel(
+        id: '7', name: 'Autre', logoPath: 'assets/images/logo_autre.png'),
   ];
 
   @override
@@ -82,7 +92,8 @@ class _CategoryGridItemState extends State<CategoryGridItem>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ReportProblemDetailsScreen(category: widget.category),
+        builder: (context) =>
+            ReportProblemDetailsScreen(category: widget.category),
       ),
     );
   }
@@ -111,7 +122,7 @@ class _CategoryGridItemState extends State<CategoryGridItem>
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // IMPORTANT: Flutter cannot directly load local file system paths like this.
-                // You MUST use asset paths (e.g., 'assets/logos/logo_routes.png') 
+                // You MUST use asset paths (e.g., 'assets/logos/logo_routes.png')
                 // and declare them in pubspec.yaml, or load from network.
                 // Using placeholder icon for now.
                 Image.asset(
@@ -149,7 +160,8 @@ class _CategoryGridItemState extends State<CategoryGridItem>
 class ProblemDetailsScreen extends StatelessWidget {
   final CategoryModel category;
 
-  const ProblemDetailsScreen({Key? key, required this.category}) : super(key: key);
+  const ProblemDetailsScreen({Key? key, required this.category})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -163,4 +175,3 @@ class ProblemDetailsScreen extends StatelessWidget {
     );
   }
 }
-

@@ -1,0 +1,23 @@
+{
+    "@@locale": "en",
+    "appTitle": "Citoyen App",
+    "appName": "Belediyti",
+    "appTagline": "Your voice, your city.",
+    "continueButton": "Continue to Belediyti",
+    "languageFrench": "Français",
+    "languageArabic": "العربية",
+    "termsAndConditions": "Terms and Conditions",
+    "reject": "Reject",
+    "acceptAndContinue": "Accept and Continue",
+    "whatIsThisAppTitle": "What is this application?",
+    "whatIsThisAppContent": "An intelligent mobile application aiming to strengthen the relationship between the municipality and the citizen, by facilitating the reporting of local problems and monitoring their resolution, and by improving the quality of daily services, such as cleanliness, roads, water, etc.",
+    "mainRoleTitle": "Main role of the application",
+    "mainRoleContent": "• Facilitate the process of reporting breakdowns and problems in neighborhoods (such as potholes, waste accumulation, water leaks, construction violations...)\n• Provide a unified communication platform between citizens and the municipality.\n• Send municipal notifications and alerts such as cleaning campaigns, public works or emergency alerts.\n• Allow citizens to track their problem through a precise tracking system (received - in progress - resolved).",
+    "citizenRightsTitle": "Citizen's Rights",
+    "citizenRightsContent": "• The right to report problems at any time and from anywhere.\n• The possibility of attaching photos and a GPS location to clarify the problem.\n• Receive instant notifications on the status of the report or complaint.\n• Submit general complaints regarding services or performance.\n• Track the complaint and provide additional feedback in case of delay in resolution.",
+    "citizenResponsibilitiesTitle": "Citizen's Responsibilities",
+    "citizenResponsibilitiesContent": "• Reporting must be accurate and honest, without false or malicious reports.\n• Respect the classification of problems according to the correct categories (cleanliness, roads, water...).\n• Interact politely and respectfully with municipal responses via the application.\n• Commit not to use the application for personal purposes or outside the scope of public interest.",
+    "appBenefitsTitle": "Benefits of the application",
+    "appBenefitsContent": "• Improvement of municipal work transparency.\n• Acceleration of problem response.\n• Rapid communication of official information to citizens.\n• Citizen involvement in improving their environment and surrounding services."
+}
+

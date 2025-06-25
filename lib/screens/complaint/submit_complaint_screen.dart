@@ -9,8 +9,9 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:provider/provider.dart'; // Added import
-import 'package:citoyen_app/providers/complaint_provider.dart'; // Adjust path as needed
+import 'package:provider/provider.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:citoyen_app/providers/complaint_provider.dart';
 
 class SubmitComplaintScreen extends StatefulWidget {
   const SubmitComplaintScreen({Key? key}) : super(key: key);
@@ -27,9 +28,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
 
   late AnimationController _animationController;
   late AnimationController _submitAnimationController;
+  late AnimationController _recordingAnimationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _pulseAnimation;
 
   // TODO: Fetch municipalities from an API
   final List<Map<String, dynamic>> _municipalities = [
@@ -48,12 +51,15 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   XFile? _photoFile;
   XFile? _videoFile;
   File? _voiceRecordFile;
-final AudioRecorder _audioRecorder = AudioRecorder();
+  final AudioRecorder _audioRecorder = AudioRecorder();
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isRecording = false;
   bool _isPlaying = false;
   String? _audioPath;
-  PlatformFile? _preuveFile; // Changed from _evidenceFile to _preuveFile
+  Duration _recordingDuration = Duration.zero;
+  Duration _playbackPosition = Duration.zero;
+  Duration _totalDuration = Duration.zero;
+  PlatformFile? _preuveFile;
 
   bool _isSubmitting = false;
   String _errorMessage = '';
@@ -67,6 +73,10 @@ final AudioRecorder _audioRecorder = AudioRecorder();
     );
     _submitAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _recordingAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
 
@@ -94,7 +104,41 @@ final AudioRecorder _audioRecorder = AudioRecorder();
       curve: Curves.elasticOut,
     ));
 
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.2,
+    ).animate(CurvedAnimation(
+      parent: _recordingAnimationController,
+      curve: Curves.easeInOut,
+    ));
+
     _animationController.forward();
+
+    // Setup audio player listeners
+    _audioPlayer.onPositionChanged.listen((position) {
+      if (mounted) {
+        setState(() {
+          _playbackPosition = position;
+        });
+      }
+    });
+
+    _audioPlayer.onDurationChanged.listen((duration) {
+      if (mounted) {
+        setState(() {
+          _totalDuration = duration;
+        });
+      }
+    });
+
+    _audioPlayer.onPlayerComplete.listen((event) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _playbackPosition = Duration.zero;
+        });
+      }
+    });
   }
 
   @override
@@ -103,6 +147,7 @@ final AudioRecorder _audioRecorder = AudioRecorder();
     _descriptionController.dispose();
     _animationController.dispose();
     _submitAnimationController.dispose();
+    _recordingAnimationController.dispose();
     _audioRecorder.dispose();
     _audioPlayer.dispose();
     super.dispose();
@@ -129,10 +174,10 @@ final AudioRecorder _audioRecorder = AudioRecorder();
         subject: _subjectController.text,
         description: _descriptionController.text,
         municipalityId: _selectedMunicipalityId,
-        photoPath: _photoFile?.path, // Use .path for XFile
-        videoPath: _videoFile?.path, // Use .path for XFile
-        voiceRecordPath: _voiceRecordFile?.path, // Use .path for File
-        evidencePath: _preuveFile?.path, // Use .path for PlatformFile
+        photoPath: _photoFile?.path,
+        videoPath: _videoFile?.path,
+        voiceRecordPath: _voiceRecordFile?.path,
+        evidencePath: _preuveFile?.path,
       );
 
       if (success) {
@@ -188,7 +233,6 @@ final AudioRecorder _audioRecorder = AudioRecorder();
     );
   }
 
-  // Placeholder for file picking logic
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(
@@ -208,33 +252,74 @@ final AudioRecorder _audioRecorder = AudioRecorder();
     if (video != null) {
       setState(() => _videoFile = video);
     }
-  }  Future<void> _recordVoice() async {
+  }
+
+  Future<void> _recordVoice() async {
     if (_isRecording) {
-      _audioRecorder.stop();
-      setState(() {
-        _isRecording = false;
-      });
+      // Stop recording
+      try {
+        final path = await _audioRecorder.stop();
+        _recordingAnimationController.stop();
+        _recordingAnimationController.reset();
+
+        setState(() {
+          _isRecording = false;
+          if (path != null && path.isNotEmpty) {
+            _audioPath = path;
+            _voiceRecordFile = File(path);
+            print('Recording saved to: $path'); // Debug log
+          }
+        });
+      } catch (e) {
+        _showSnackBar('Erreur lors de l\'arrêt de l\'enregistrement: $e');
+        setState(() {
+          _isRecording = false;
+        });
+      }
     } else {
+      // Start recording
       if (await _audioRecorder.hasPermission()) {
-  final directory = await getApplicationDocumentsDirectory();
-  final path = p.join(directory.path, 'audio_${DateTime.now().millisecondsSinceEpoch}.m4a');
-  
-  // Fixed: Provide RecordConfig as first positional argument
-  await _audioRecorder.start(
-    const RecordConfig(
-      encoder: AudioEncoder.aacLc, // You can choose different encoders
-      bitRate: 128000,
-      sampleRate: 44100,
-    ),
-    path: path,
-  );
-  
-  setState(() {
-    _isRecording = true;
-    _audioPath = path;
-    _voiceRecordFile = File(path);
-  });
-}
+        try {
+          final directory = await getApplicationDocumentsDirectory();
+          final path = p.join(directory.path,
+              'voice_${DateTime.now().millisecondsSinceEpoch}.m4a');
+
+          await _audioRecorder.start(
+            const RecordConfig(
+              encoder: AudioEncoder.aacLc,
+              bitRate: 128000,
+              sampleRate: 44100,
+            ),
+            path: path,
+          );
+
+          setState(() {
+            _isRecording = true;
+            _recordingDuration = Duration.zero;
+          });
+
+          _recordingAnimationController.repeat(reverse: true);
+          _startRecordingTimer();
+        } catch (e) {
+          _showSnackBar('Erreur lors du démarrage de l\'enregistrement: $e');
+        }
+      } else {
+        _showSnackBar('Permission d\'enregistrement audio refusée');
+      }
+    }
+  }
+
+  void _startRecordingTimer() {
+    if (_isRecording) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (_isRecording && mounted) {
+          setState(() {
+            _recordingDuration =
+                Duration(seconds: _recordingDuration.inSeconds + 1);
+          });
+          _startRecordingTimer();
+        }
+      });
     }
   }
 
@@ -245,21 +330,50 @@ final AudioRecorder _audioRecorder = AudioRecorder();
         _isPlaying = false;
       });
     } else {
-      if (_audioPath != null) {
-        await _audioPlayer.play(DeviceFileSource(_audioPath!));
-        setState(() {
-          _isPlaying = true;
-        });
-        _audioPlayer.onPlayerComplete.listen((event) {
+      if (_audioPath != null && File(_audioPath!).existsSync()) {
+        try {
+          await _audioPlayer.play(DeviceFileSource(_audioPath!));
           setState(() {
-            _isPlaying = false;
+            _isPlaying = true;
           });
-        });
+        } catch (e) {
+          _showSnackBar('Erreur lors de la lecture: $e');
+        }
       } else {
         _showSnackBar('Aucun enregistrement vocal disponible.');
       }
     }
-  }  Future<void> _pickPreuve() async {
+  }
+
+  Future<void> _deleteRecording() async {
+    // Stop playback if playing
+    if (_isPlaying) {
+      await _audioPlayer.stop();
+    }
+
+    // Delete file if exists
+    if (_audioPath != null) {
+      try {
+        final file = File(_audioPath!);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e) {
+        print('Error deleting recording: $e');
+      }
+    }
+
+    setState(() {
+      _audioPath = null;
+      _voiceRecordFile = null;
+      _isPlaying = false;
+      _recordingDuration = Duration.zero;
+      _playbackPosition = Duration.zero;
+      _totalDuration = Duration.zero;
+    });
+  }
+
+  Future<void> _pickPreuve() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
@@ -268,6 +382,13 @@ final AudioRecorder _audioRecorder = AudioRecorder();
     if (result != null) {
       setState(() => _preuveFile = result.files.first);
     }
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$minutes:$seconds";
   }
 
   @override
@@ -281,7 +402,7 @@ final AudioRecorder _audioRecorder = AudioRecorder();
         slivers: [
           // Beautiful App Bar
           SliverAppBar(
-            expandedHeight: 120,
+            expandedHeight: 140,
             floating: false,
             pinned: true,
             elevation: 0,
@@ -293,7 +414,7 @@ final AudioRecorder _audioRecorder = AudioRecorder();
                   end: Alignment.bottomRight,
                   colors: [
                     Color(0xFF667EEA),
-                    Color.fromARGB(255, 25, 4, 219),
+                    Color(0xFF764BA2),
                   ],
                 ),
               ),
@@ -307,10 +428,29 @@ final AudioRecorder _audioRecorder = AudioRecorder();
                   ),
                 ),
                 centerTitle: true,
+                background: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF667EEA),
+                        Color(0xFF764BA2),
+                      ],
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.feedback_rounded,
+                      color: Colors.white.withOpacity(0.3),
+                      size: 80,
+                    ),
+                  ),
+                ),
               ),
             ),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -372,7 +512,7 @@ final AudioRecorder _audioRecorder = AudioRecorder();
 
                             // Submit Button
                             _buildAnimatedSection(
-                              delay: 1000,
+                              delay: 1200,
                               child: _buildSubmitButton(theme),
                             ),
                             const SizedBox(height: 20),
@@ -393,68 +533,72 @@ final AudioRecorder _audioRecorder = AudioRecorder();
   Widget _buildWelcomeCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFFFFFFFF),
-            Color(0xFFF7FAFC),
+            Colors.white,
+            const Color(0xFFF7FAFC),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 25,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF667EEA).withOpacity(0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.campaign_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Votre voix compte',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1A202C),
                   ),
-                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.feedback_outlined,
-                  color: Colors.white,
-                  size: 24,
+                const SizedBox(height: 4),
+                Text(
+                  'Aidez-nous à améliorer nos services ensemble',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFF718096),
+                    height: 1.4,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Votre voix compte',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1A202C),
-                      ),
-                    ),
-                    Text(
-                      'Aidez-nous à améliorer nos services',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: const Color(0xFF718096),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -471,8 +615,8 @@ final AudioRecorder _audioRecorder = AudioRecorder();
         ).animate(CurvedAnimation(
           parent: _animationController,
           curve: Interval(
-            delay / 1200,
-            (delay + 400) / 1200,
+            delay / 1400,
+            (delay + 400) / 1400,
             curve: Curves.easeOutCubic,
           ),
         ));
@@ -480,7 +624,7 @@ final AudioRecorder _audioRecorder = AudioRecorder();
         return FadeTransition(
           opacity: delayedAnimation,
           child: Transform.translate(
-            offset: Offset(0, 20 * (1 - delayedAnimation.value)),
+            offset: Offset(0, 30 * (1 - delayedAnimation.value)),
             child: child,
           ),
         );
@@ -492,55 +636,45 @@ final AudioRecorder _audioRecorder = AudioRecorder();
     return _buildSection(
       title: 'Municipalité Concernée',
       isRequired: true,
-      icon: Icons.location_city,
+      icon: Icons.location_city_rounded,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: DropdownButtonFormField<String>(
           value: _selectedMunicipalityId,
-          hint: Text(
-            'Sélectionner une municipalité',
-            style: GoogleFonts.inter(
-              color: const Color(0xFF9CA3AF),
-              fontSize: 14,
-            ),
-          ),
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
+            hintText: 'Sélectionnez une municipalité',
             border: InputBorder.none,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            prefixIcon: Icon(
-              Icons.location_on,
-              color: const Color(0xFF667EEA),
-              size: 20,
-            ),
+            contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           ),
-          items: _municipalities.map((m) {
+          items: _municipalities.map((municipality) {
             return DropdownMenuItem<String>(
-              value: m['id'],
+              value: municipality['id'],
               child: Text(
-                m['name'],
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: const Color(0xFF374151),
-                ),
+                municipality['name'],
+                style: GoogleFonts.inter(fontSize: 15),
               ),
             );
           }).toList(),
           onChanged: (value) {
             setState(() => _selectedMunicipalityId = value);
           },
-          validator: (value) => value == null ? 'Champ obligatoire' : null,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Veuillez sélectionner une municipalité';
+            }
+            return null;
+          },
         ),
       ),
     );
@@ -550,44 +684,34 @@ final AudioRecorder _audioRecorder = AudioRecorder();
     return _buildSection(
       title: 'Sujet de la Réclamation',
       isRequired: true,
-      icon: Icons.subject,
+      icon: Icons.title_rounded,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: TextFormField(
           controller: _subjectController,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            color: const Color(0xFF374151),
-          ),
-          decoration: InputDecoration(
-            hintText: 'Ex: Retard de service, Problème avec un agent',
-            hintStyle: GoogleFonts.inter(
-              color: const Color(0xFF9CA3AF),
-              fontSize: 14,
-            ),
+          style: GoogleFonts.inter(fontSize: 15),
+          decoration: const InputDecoration(
+            hintText: 'Résumez votre réclamation en quelques mots',
             border: InputBorder.none,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            prefixIcon: Icon(
-              Icons.edit_outlined,
-              color: const Color(0xFF667EEA),
-              size: 20,
-            ),
+            contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
-              return 'Veuillez entrer un sujet.';
+              return 'Le sujet est requis';
+            }
+            if (value.trim().length < 5) {
+              return 'Le sujet doit contenir au moins 5 caractères';
             }
             return null;
           },
@@ -600,43 +724,352 @@ final AudioRecorder _audioRecorder = AudioRecorder();
     return _buildSection(
       title: 'Description Détaillée',
       isRequired: true,
-      icon: Icons.description,
+      icon: Icons.description_rounded,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: TextFormField(
           controller: _descriptionController,
-          maxLines: 6,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            color: const Color(0xFF374151),
-          ),
-          decoration: InputDecoration(
-            hintText: 'Donnez tous les détails pertinents ici...',
-            hintStyle: GoogleFonts.inter(
-              color: const Color(0xFF9CA3AF),
-              fontSize: 14,
-            ),
+          maxLines: 5,
+          style: GoogleFonts.inter(fontSize: 15, height: 1.5),
+          decoration: const InputDecoration(
+            hintText: 'Décrivez votre réclamation en détail...',
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.all(16),
-            alignLabelWithHint: true,
+            contentPadding: EdgeInsets.all(20),
           ),
           validator: (value) {
-            if (value == null || value.trim().length < 20) {
-              return 'Veuillez fournir une description d\'au moins 20 caractères.';
+            if (value == null || value.trim().isEmpty) {
+              return 'La description est requise';
+            }
+            if (value.trim().length < 20) {
+              return 'La description doit contenir au moins 20 caractères';
             }
             return null;
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoiceRecordingSection(ThemeData theme) {
+    return _buildSection(
+      title: 'Message Vocal (Optionnel)',
+      isRequired: false,
+      icon: Icons.mic_rounded,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              const Color(0xFFF8FAFC),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Recording State: No recording exists
+            if (_audioPath == null && !_isRecording) ...[
+              GestureDetector(
+                onTap: _recordVoice,
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF667EEA).withOpacity(0.4),
+                        blurRadius: 20,
+                        spreadRadius: 3,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.mic_rounded,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Appuyez pour enregistrer',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  color: const Color(0xFF4A5568),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Enregistrez un message vocal pour accompagner votre réclamation',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: const Color(0xFF718096),
+                  height: 1.4,
+                ),
+              ),
+            ]
+
+            // Recording State: Currently recording
+            else if (_isRecording) ...[
+              AnimatedBuilder(
+                animation: _pulseAnimation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _pulseAnimation.value,
+                    child: GestureDetector(
+                      onTap: _recordVoice,
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.4),
+                              blurRadius: 25,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.stop_rounded,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Enregistrement... ${_formatDuration(_recordingDuration)}',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Appuyez sur le bouton pour arrêter',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: const Color(0xFF718096),
+                ),
+              ),
+            ]
+
+            // Recording State: Recording exists
+            else if (_audioPath != null) ...[
+              // Playback controls
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Play/Pause button
+                  GestureDetector(
+                    onTap: _playRecordedVoice,
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: _isPlaying
+                              ? [Colors.orange, Colors.deepOrange]
+                              : [
+                                  const Color(0xFF38A169),
+                                  const Color(0xFF2F855A)
+                                ],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_isPlaying
+                                    ? Colors.orange
+                                    : const Color(0xFF38A169))
+                                .withOpacity(0.3),
+                            blurRadius: 15,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        _isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+
+                  // Recording info and waveform
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF38A169).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF38A169).withOpacity(0.2),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.audiotrack_rounded,
+                                color: const Color(0xFF38A169),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Enregistrement prêt',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: const Color(0xFF38A169),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Progress bar
+                          if (_totalDuration.inMilliseconds > 0) ...[
+                            LinearProgressIndicator(
+                              value: _playbackPosition.inMilliseconds /
+                                  _totalDuration.inMilliseconds,
+                              backgroundColor:
+                                  const Color(0xFF38A169).withOpacity(0.2),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF38A169)),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  _formatDuration(_playbackPosition),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: const Color(0xFF38A169),
+                                  ),
+                                ),
+                                Text(
+                                  _formatDuration(_totalDuration),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: const Color(0xFF38A169),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Delete button
+                  GestureDetector(
+                    onTap: _deleteRecording,
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFE53E3E), Color(0xFFC53030)],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFE53E3E).withOpacity(0.3),
+                            blurRadius: 15,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.delete_rounded,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF38A169).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Appuyez sur lecture pour écouter votre enregistrement',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: const Color(0xFF38A169),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -646,45 +1079,219 @@ final AudioRecorder _audioRecorder = AudioRecorder();
     return _buildSection(
       title: 'Pièces Jointes',
       isRequired: false,
-      icon: Icons.attach_file,
+      icon: Icons.attach_file_rounded,
       child: Column(
         children: [
-          _buildAttachmentButton(
-            icon: Icons.camera_alt,
-            label: 'Joindre une Photo',
-            subtitle: _photoFile != null ? 'Photo sélectionnée' : 'Optionnel',
-            onTap: _pickImage,
-            isSelected: _photoFile != null,
-          ),
-          const SizedBox(height: 12),
-          _buildAttachmentButton(
-            icon: Icons.videocam,
-            label: 'Joindre une Vidéo',
-            subtitle: _videoFile != null ? 'Vidéo sélectionnée' : 'Optionnel',
-            onTap: _pickVideo,
-            isSelected: _videoFile != null,
-          ),
-          const SizedBox(height: 12),
-          _buildAttachmentButton(
-            icon: Icons.mic,
-            label: 'Joindre une Note Vocale',
+          // Photo attachment
+          _buildAttachmentCard(
+            title: 'Photo',
             subtitle:
-                _voiceRecordFile != null ? 'Audio enregistré' : 'Optionnel',
-            onTap: _recordVoice,
-            isSelected: _voiceRecordFile != null,
+                _photoFile != null ? 'Photo sélectionnée' : 'Ajouter une photo',
+            icon: Icons.photo_camera_rounded,
+            isSelected: _photoFile != null,
+            onTap: _pickImage,
+            color: const Color(0xFF3182CE),
           ),
-          const SizedBox(height: 12),
-          _buildAttachmentButton(
-            icon: Icons.description,
-            label: 'Joindre une Preuve',
-            subtitle: _preuveFile != null
-                ? _preuveFile!.name
-                : 'Requis - PDF, DOC, Image',
-            onTap: _pickPreuve,
+          const SizedBox(height: 16),
+
+          // Video attachment
+          _buildAttachmentCard(
+            title: 'Vidéo',
+            subtitle:
+                _videoFile != null ? 'Vidéo sélectionnée' : 'Ajouter une vidéo',
+            icon: Icons.videocam_rounded,
+            isSelected: _videoFile != null,
+            onTap: _pickVideo,
+            color: const Color(0xFF805AD5),
+          ),
+          const SizedBox(height: 16),
+
+          // Evidence document (required)
+          _buildAttachmentCard(
+            title: 'Preuve (Requis)',
+            subtitle:
+                _preuveFile != null ? _preuveFile!.name : 'Ajouter un document',
+            icon: Icons.description_rounded,
             isSelected: _preuveFile != null,
+            onTap: _pickPreuve,
             isRequired: true,
+            color: const Color(0xFFD69E2E),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAttachmentCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Color color,
+    bool isRequired = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? color : const Color(0xFFE2E8F0),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? color.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isSelected ? color : color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? Colors.white : color,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1A202C),
+                        ),
+                      ),
+                      if (isRequired) ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          '*',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: isSelected ? color : const Color(0xFF718096),
+                      fontWeight:
+                          isSelected ? FontWeight.w500 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? color.withOpacity(0.1)
+                    : const Color(0xFFF7FAFC),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                isSelected
+                    ? Icons.check_circle_rounded
+                    : Icons.add_circle_outline_rounded,
+                color: isSelected ? color : const Color(0xFF718096),
+                size: 20,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton(ThemeData theme) {
+    return SizedBox(
+      width: double.infinity,
+      height: 60,
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: ElevatedButton(
+              onPressed: _isSubmitting ? null : _submitComplaint,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF667EEA),
+                foregroundColor: Colors.white,
+                elevation: 12,
+                shadowColor: const Color(0xFF667EEA).withOpacity(0.4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: _isSubmitting
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
+                          'Soumission en cours...',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.send_rounded,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Soumettre la Réclamation',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -716,8 +1323,8 @@ final AudioRecorder _audioRecorder = AudioRecorder();
             Text(
               title,
               style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
                 color: const Color(0xFF1A202C),
               ),
             ),
@@ -726,270 +1333,17 @@ final AudioRecorder _audioRecorder = AudioRecorder();
               Text(
                 '*',
                 style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFFE53E3E),
+                  fontSize: 18,
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         child,
       ],
     );
   }
-
-  Widget _buildAttachmentButton({
-    required IconData icon,
-    required String label,
-    required String subtitle,
-    required VoidCallback onTap,
-    required bool isSelected,
-    bool isRequired = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF667EEA).withOpacity(0.05)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF667EEA)
-                : isRequired
-                    ? const Color(0xFFE53E3E).withOpacity(0.3)
-                    : const Color(0xFFE2E8F0),
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFF667EEA)
-                    : const Color(0xFF667EEA).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color: isSelected ? Colors.white : const Color(0xFF667EEA),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        label,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF374151),
-                        ),
-                      ),
-                      if (isRequired) ...[
-                        const SizedBox(width: 4),
-                        Text(
-                          '*',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFFE53E3E),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: isSelected
-                          ? const Color(0xFF667EEA)
-                          : const Color(0xFF9CA3AF),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.check,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubmitButton(ThemeData theme) {
-    return AnimatedBuilder(
-      animation: _scaleAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: Container(
-            width: double.infinity,
-            height: 56,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF667EEA),
-                  Color(0xFF764BA2),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF667EEA).withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: _isSubmitting ? null : _submitComplaint,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: _isSubmitting
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                            strokeWidth: 2,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Soumission en cours...',
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Text(
-                      'Soumettre la Réclamation',
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 }
-
-import 'package:record/record.dart';
-import 'package:audioplayers/audioplayers.dart';
-
-
-import 'package:path_provider/path_provider.dart';
-
-
-
-  Widget _buildVoiceRecordingSection(ThemeData theme) {
-    return _buildSection(
-      title: 'Enregistrement Vocal (Optionnel)',
-      isRequired: false,
-      icon: Icons.mic,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _recordVoice,
-                  icon: Icon(_isRecording ? Icons.stop : Icons.mic),
-                  label: Text(_isRecording ? 'Arrêter l\'enregistrement' : 'Enregistrer un message vocal'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _isRecording ? Colors.redAccent : theme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-              if (_audioPath != null)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: ElevatedButton.icon(
-                    onPressed: _playRecordedVoice,
-                    icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                    label: Text(_isPlaying ? 'Pause' : 'Écouter'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isPlaying ? Colors.orangeAccent : Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          if (_audioPath != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Text(
-                'Fichier vocal: ${p.basename(_audioPath!)}',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
