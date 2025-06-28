@@ -5,7 +5,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_ar.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_fr.dart';
 
 // ignore_for_file: type=lint
 
@@ -92,121 +94,11 @@ abstract class AppLocalizations {
   ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('en')];
-
-  /// No description provided for @appTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Citoyen App'**
-  String get appTitle;
-
-  /// No description provided for @appName.
-  ///
-  /// In en, this message translates to:
-  /// **'Belediyti'**
-  String get appName;
-
-  /// No description provided for @appTagline.
-  ///
-  /// In en, this message translates to:
-  /// **'Your voice, your city.'**
-  String get appTagline;
-
-  /// No description provided for @continueButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue to Belediyti'**
-  String get continueButton;
-
-  /// No description provided for @languageFrench.
-  ///
-  /// In en, this message translates to:
-  /// **'Français'**
-  String get languageFrench;
-
-  /// No description provided for @languageArabic.
-  ///
-  /// In en, this message translates to:
-  /// **'العربية'**
-  String get languageArabic;
-
-  /// No description provided for @termsAndConditions.
-  ///
-  /// In en, this message translates to:
-  /// **'Terms and Conditions'**
-  String get termsAndConditions;
-
-  /// No description provided for @reject.
-  ///
-  /// In en, this message translates to:
-  /// **'Reject'**
-  String get reject;
-
-  /// No description provided for @acceptAndContinue.
-  ///
-  /// In en, this message translates to:
-  /// **'Accept and Continue'**
-  String get acceptAndContinue;
-
-  /// No description provided for @whatIsThisAppTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'What is this application?'**
-  String get whatIsThisAppTitle;
-
-  /// No description provided for @whatIsThisAppContent.
-  ///
-  /// In en, this message translates to:
-  /// **'An intelligent mobile application aiming to strengthen the relationship between the municipality and the citizen, by facilitating the reporting of local problems and monitoring their resolution, and by improving the quality of daily services, such as cleanliness, roads, water, etc.'**
-  String get whatIsThisAppContent;
-
-  /// No description provided for @mainRoleTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Main role of the application'**
-  String get mainRoleTitle;
-
-  /// No description provided for @mainRoleContent.
-  ///
-  /// In en, this message translates to:
-  /// **'• Facilitate the process of reporting breakdowns and problems in neighborhoods (such as potholes, waste accumulation, water leaks, construction violations...)\n• Provide a unified communication platform between citizens and the municipality.\n• Send municipal notifications and alerts such as cleaning campaigns, public works or emergency alerts.\n• Allow citizens to track their problem through a precise tracking system (received - in progress - resolved).'**
-  String get mainRoleContent;
-
-  /// No description provided for @citizenRightsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Citizen\'s Rights'**
-  String get citizenRightsTitle;
-
-  /// No description provided for @citizenRightsContent.
-  ///
-  /// In en, this message translates to:
-  /// **'• The right to report problems at any time and from anywhere.\n• The possibility of attaching photos and a GPS location to clarify the problem.\n• Receive instant notifications on the status of the report or complaint.\n• Submit general complaints regarding services or performance.\n• Track the complaint and provide additional feedback in case of delay in resolution.'**
-  String get citizenRightsContent;
-
-  /// No description provided for @citizenResponsibilitiesTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Citizen\'s Responsibilities'**
-  String get citizenResponsibilitiesTitle;
-
-  /// No description provided for @citizenResponsibilitiesContent.
-  ///
-  /// In en, this message translates to:
-  /// **'• Reporting must be accurate and honest, without false or malicious reports.\n• Respect the classification of problems according to the correct categories (cleanliness, roads, water...).\n• Interact politely and respectfully with municipal responses via the application.\n• Commit not to use the application for personal purposes or outside the scope of public interest.'**
-  String get citizenResponsibilitiesContent;
-
-  /// No description provided for @appBenefitsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Benefits of the application'**
-  String get appBenefitsTitle;
-
-  /// No description provided for @appBenefitsContent.
-  ///
-  /// In en, this message translates to:
-  /// **'• Improvement of municipal work transparency.\n• Acceleration of problem response.\n• Rapid communication of official information to citizens.\n• Citizen involvement in improving their environment and surrounding services.'**
-  String get appBenefitsContent;
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('ar'),
+    Locale('en'),
+    Locale('fr')
+  ];
 }
 
 class _AppLocalizationsDelegate
@@ -220,7 +112,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en'].contains(locale.languageCode);
+      <String>['ar', 'en', 'fr'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -229,8 +121,12 @@ class _AppLocalizationsDelegate
 AppLocalizations lookupAppLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'ar':
+      return AppLocalizationsAr();
     case 'en':
       return AppLocalizationsEn();
+    case 'fr':
+      return AppLocalizationsFr();
   }
 
   throw FlutterError(

@@ -444,7 +444,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                   end: Alignment.bottomRight,
                   colors: [
                     Color(0xFF667EEA),
-                    Color(0xFF764BA2),
+                    Color.fromARGB(255, 7, 50, 241),
                   ],
                 ),
               ),
@@ -465,7 +465,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                       end: Alignment.bottomRight,
                       colors: [
                         Color(0xFF667EEA),
-                        Color(0xFF764BA2),
+                        Color.fromARGB(255, 7, 50, 241),
                       ],
                     ),
                   ),
@@ -588,7 +588,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                colors: [Color(0xFF667EEA), Color.fromARGB(255, 7, 50, 241)],
               ),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
@@ -836,7 +836,10 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                   height: 70,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                      colors: [
+                        Color.fromARGB(255, 7, 50, 241),
+                        Color.fromARGB(255, 7, 50, 241)
+                      ],
                     ),
                     shape: BoxShape.circle,
                     boxShadow: [
