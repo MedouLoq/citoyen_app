@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Only provider, not Riverpod
-import 'package:citoyen_app/screens/splash_screen.dart'; // Will be created next
-
-import 'package:citoyen_app/providers/dashboard_provider.dart'; // Import your provider
+import 'package:provider/provider.dart';
+import 'package:citoyen_app/screens/splash_screen.dart';
+import 'package:citoyen_app/providers/dashboard_provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'screens/problem/problem_list_screen.dart';
 import 'screens/problem/report_problem_screen.dart';
@@ -12,6 +11,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'providers/problem_provider.dart';
 import 'providers/complaint_provider.dart';
 import 'providers/notification_provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:citoyen_app/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,37 +25,72 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ProblemProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => ComplaintProvider()),
-        // Add other providers here
       ],
       child: const MyApp(),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  Locale? _locale;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedLocale();
+  }
+
+  Future<void> _loadSavedLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedLanguageCode = prefs.getString('selectedLanguage');
+    if (savedLanguageCode != null) {
+      setState(() {
+        _locale = Locale(savedLanguageCode);
+      });
+    }
+  }
+
+  void _updateLocale(Locale newLocale) {
+    setState(() {
+      _locale = newLocale;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Citoyen App',
       debugShowCheckedModeBanner: false,
-      // In your main.dart or routes configuration
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('fr'), // French
+        Locale('ar'), // Arabic
+      ],
+      locale: _locale, // Use the dynamically set locale
       routes: {
         '/problem_list': (context) => ProblemListScreen(),
         '/report_problem': (context) => CategorySelectionScreen(),
         '/submit_complaint': (context) => SubmitComplaintScreen(),
-        // Add other routes as needed
       },
-
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        // Define a modern color scheme (example)
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF007AFF), // Example primary blue
+          seedColor: const Color(0xFF007AFF),
           brightness: Brightness.light,
           primary: const Color(0xFF007AFF),
-          secondary: const Color(0xFF5AC8FA), // Example secondary light blue
+          secondary: const Color(0xFF5AC8FA),
           surface: Colors.white,
           background: const Color(0xFFF2F2F7),
           error: const Color(0xFFFF3B30),
@@ -128,12 +165,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const SplashScreen(), // Initial screen
-      // Define routes here later
-      // routes: {
-      //   '/login': (context) => LoginScreen(),
-      //   '/dashboard': (context) => DashboardScreen(),
-      // },
+      home: SplashScreen(onLocaleChanged: _updateLocale),
     );
   }
 }

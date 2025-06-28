@@ -4,9 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth/auth_screen.dart';
 import 'dart:async';
+import 'package:citoyen_app/l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final Function(Locale) onLocaleChanged;
+
+  const SplashScreen({super.key, required this.onLocaleChanged});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -33,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 3000),
     );
 
-    // Check if user has already accepted agreement
+    _loadSavedLanguage();
     _checkAgreementStatus();
 
     // Start initial animations
@@ -50,6 +53,26 @@ class _SplashScreenState extends State<SplashScreen>
         });
       }
     });
+  }
+
+  Future<void> _loadSavedLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedLanguage = prefs.getString('selectedLanguage');
+    if (savedLanguage != null) {
+      setState(() {
+        _selectedLanguage = savedLanguage;
+      });
+      widget.onLocaleChanged(Locale(savedLanguage));
+    }
+  }
+
+  Future<void> _saveAndUpdateLanguage(String languageCode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selectedLanguage', languageCode);
+    setState(() {
+      _selectedLanguage = languageCode;
+    });
+    widget.onLocaleChanged(Locale(languageCode));
   }
 
   // Check if user has already accepted the agreement
@@ -99,6 +122,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return Scaffold(
       body: Stack(
         children: [
@@ -202,7 +226,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                         // App name
                         Text(
-                          'Belediyti',
+                          localizations?.appName ?? 'App Name',
                           style: GoogleFonts.montserrat(
                             fontSize: 38,
                             fontWeight: FontWeight.bold,
@@ -218,7 +242,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                         // App tagline
                         Text(
-                          'Votre voix, votre ville.',
+                          localizations?.appTagline ?? 'App Tagline',
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.w500,
@@ -253,7 +277,7 @@ class _SplashScreenState extends State<SplashScreen>
                             shadowColor: Colors.black38,
                           ),
                           child: Text(
-                            'Continuer vers Belediyti',
+                            localizations?.continueButton ?? 'Continue',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -302,9 +326,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedLanguage = code;
-        });
+        _saveAndUpdateLanguage(code);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -325,6 +347,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Widget _buildAgreementOverlay() {
+    final localizations = AppLocalizations.of(context);
     return Container(
       color: Colors.white,
       child: SafeArea(
@@ -343,7 +366,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Termes et Conditions',
+                    localizations?.termsAndConditions ?? 'Terms and Conditions',
                     style: GoogleFonts.montserrat(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -363,33 +386,26 @@ class _SplashScreenState extends State<SplashScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildAgreementSection(
-                          'Qu\'est-ce que cette application?',
-                          'Une application mobile intelligente visant à renforcer la relation entre la municipalité et le citoyen, en facilitant le signalement des problèmes locaux et le suivi de leur résolution, et en améliorant la qualité des services quotidiens, tels que la propreté, les routes, l\'eau, etc.'),
+                          localizations?.whatIsThisApp ?? 'What is this app?',
+                          localizations?.whatIsThisAppContent ??
+                              'No content provided'),
                       _buildAgreementSection(
-                          'Rôle principal de l\'application',
-                          '• Faciliter le processus de signalement des pannes et des problèmes dans les quartiers (tels que les nids-de-poule, l\'accumulation de déchets, les fuites d\'eau, les infractions de construction...)\n'
-                              '• Fournir une plateforme unifiée de communication entre les citoyens et la municipalité.\n'
-                              '• Envoyer des notifications et des alertes municipales telles que les campagnes de nettoyage, les travaux publics ou les alertes d\'urgence.\n'
-                              '• Permettre au citoyen de suivre son problème grâce à un système de suivi précis (reçu - en cours de traitement - résolu).'),
+                          localizations?.mainRoleOfApp ?? 'Main role of app',
+                          localizations?.mainRoleOfAppContent ??
+                              'No content provided'),
                       _buildAgreementSection(
-                          'Droits du citoyen',
-                          '• Le droit de signaler des problèmes à tout moment et de n\'importe quel endroit.\n'
-                              '• La possibilité de joindre des photos et un emplacement GPS pour clarifier le problème.\n'
-                              '• Recevoir des notifications instantanées sur le statut du signalement ou de la plainte.\n'
-                              '• Soumettre des plaintes générales concernant les services ou les performances.\n'
-                              '• Suivre la plainte et fournir des commentaires supplémentaires en cas de retard dans la résolution.'),
+                          localizations?.citizenRights ?? 'Citizen Rights',
+                          localizations?.citizenRightsContent ??
+                              'No content provided'),
                       _buildAgreementSection(
-                          'Responsabilités du citoyen',
-                          '• Le signalement doit être précis et honnête, sans faux signalements ou signalements malveillants.\n'
-                              '• Respecter la classification des problèmes selon les bonnes catégories (propreté, routes, eau...).\n'
-                              '• Interagir poliment et respectueusement avec les réponses de la municipalité via l\'application.\n'
-                              '• S\'engager à ne pas utiliser l\'application à des fins personnelles ou en dehors du cadre de l\'intérêt public.'),
+                          localizations?.citizenResponsibilities ??
+                              'Citizen Responsibilities',
+                          localizations?.citizenResponsibilitiesContent ??
+                              'No content provided'),
                       _buildAgreementSection(
-                          'Avantages de l\'application',
-                          '• Amélioration de la transparence du travail municipal.\n'
-                              '• Accélération de la réponse aux problèmes.\n'
-                              '• Communication rapide des informations officielles aux citoyens.\n'
-                              '• Implication du citoyen dans l\'amélioration de son environnement et des services qui l\'entourent.'),
+                          localizations?.appBenefits ?? 'App Benefits',
+                          localizations?.appBenefitsContent ??
+                              'No content provided'),
                     ],
                   ),
                 ),
@@ -410,47 +426,41 @@ class _SplashScreenState extends State<SplashScreen>
                       },
                       icon: const Icon(Icons.close_rounded),
                       label: Text(
-                        'Refuser',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      style: TextButton.styleFrom(
-                        foregroundColor:
-                            const Color(0xFF757575), // Gray text for reject
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 16),
-
-                  // Accept button
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        _saveAgreementAcceptance();
-                        _navigateToNextScreen();
-                      },
-                      icon: const Icon(Icons.check_circle_rounded),
-                      label: Text(
-                        'Accepter et Continuer',
+                        localizations?.rejectButton ?? 'Reject',
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
+                          color: Colors.redAccent,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  // Accept button
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        await _saveAgreementAcceptance();
+                        _navigateToNextScreen();
+                      },
+                      icon: const Icon(Icons.check_circle_rounded,
+                          color: Colors.white),
+                      label: Text(
+                        localizations?.acceptButton ?? 'Accept',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor:
-                            const Color(0xFF1565C0), // Match with title color
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        elevation: 2,
+                        backgroundColor: const Color(0xFF1565C0),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        elevation: 5,
+                        shadowColor: Colors.black38,
                       ),
                     ),
                   ),
@@ -460,89 +470,32 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         ),
       ),
-    ).animate().fadeIn(duration: 300.ms);
+    );
   }
 
   Widget _buildAgreementSection(String title, String content) {
-    // Determine icon based on section title
-    IconData getIconForTitle(String title) {
-      if (title.contains('Qu\'est-ce que cette application')) {
-        return Icons.app_shortcut_rounded;
-      } else if (title.contains('Rôle principal')) {
-        return Icons.phone_android_rounded;
-      } else if (title.contains('Droits du citoyen')) {
-        return Icons.person_rounded;
-      } else if (title.contains('Responsabilités')) {
-        return Icons.warning_rounded;
-      } else if (title.contains('Avantages')) {
-        return Icons.star_rounded;
-      }
-      return Icons.article_rounded; // Default icon
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20.0),
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F9FF), // Light blue background for sections
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.montserrat(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF0D47A1),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1565C0).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  getIconForTitle(title),
-                  color: const Color(0xFF1565C0),
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title
-                      .replaceAll(RegExp(r'🎯|📱|👤|⚠️|🧩'), '')
-                      .trim(), // Remove emoji from title
-                  style: GoogleFonts.montserrat(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(
-                        0xFF0D47A1), // Darker blue for section titles
-                  ),
-                ),
-              ),
-            ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          content,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: Colors.black87,
+            height: 1.5,
           ),
-          const SizedBox(height: 12),
-          Padding(
-            padding:
-                const EdgeInsets.only(left: 42.0), // Align with text after icon
-            child: Text(
-              content,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color:
-                    const Color(0xFF424242), // Dark gray for better readability
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 }
