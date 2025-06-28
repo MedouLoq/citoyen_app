@@ -4,7 +4,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'auth/login_screen.dart';
+import 'auth/auth_screen.dart';
 
 class VerificationScreen extends StatefulWidget {
   final String phoneNumber;
@@ -65,7 +65,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
           await Future.delayed(const Duration(seconds: 1));
           if (mounted) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
+              MaterialPageRoute(builder: (context) => const AuthScreen()),
             );
           }
         } else {
