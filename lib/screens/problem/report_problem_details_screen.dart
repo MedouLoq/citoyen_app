@@ -118,17 +118,100 @@ class _ReportProblemDetailsScreenState
   }
 
   Future<void> _requestLocationPermission() async {
-    final status = await Permission.location.request();
-    if (status.isGranted) {
-      await _getCurrentLocation();
-    } else {
+    // Check if location services are enabled
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
       if (mounted) {
         setState(() {
           _isLoadingLocation = false;
-          _errorMessage = 'Permission de localisation refusée';
+          _errorMessage = 'Les services de localisation sont désactivés';
         });
       }
+      _showLocationServiceDialog();
+      return;
     }
+
+    // Check location permission
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          setState(() {
+            _isLoadingLocation = false;
+            _errorMessage = 'Permission de localisation refusée';
+          });
+        }
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = false;
+          _errorMessage = 'Permission de localisation définitivement refusée';
+        });
+      }
+      _showPermissionDialog();
+      return;
+    }
+
+    // Permission granted, get location
+    await _getCurrentLocation();
+  }
+
+  void _showLocationServiceDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Services de localisation désactivés'),
+          content: const Text(
+              'Veuillez activer les services de localisation dans les paramètres de votre appareil.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Geolocator.openLocationSettings();
+              },
+              child: const Text('Paramètres'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Permission requise'),
+          content: const Text(
+              'Cette application nécessite la permission de localisation pour fonctionner. Veuillez l\'activer dans les paramètres.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Geolocator.openAppSettings();
+              },
+              child: const Text('Paramètres'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _getCurrentLocation() async {
