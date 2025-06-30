@@ -1,5 +1,5 @@
 // ============================================================================
-// 2. UPDATED VERIFICATION SCREEN
+// 2. UPDATED VERIFICATION SCREEN (Arabic/French)
 // ============================================================================
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -60,7 +60,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(responseBody['message'] ??
-                    _getText('تم التحقق بنجاح!', 'Verification successful!'))),
+                    _getText('تم التحقق بنجاح!', 'Vérification réussie!'))),
           );
           await Future.delayed(const Duration(seconds: 1));
           if (mounted) {
@@ -72,7 +72,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
           setState(() {
             _errorMessage = responseBody['error'] ??
                 _getText('فشل التحقق. يرجى المحاولة مرة أخرى.',
-                    'Verification failed. Please try again.');
+                    'Échec de la vérification. Veuillez réessayer.');
           });
         }
       } catch (e) {
@@ -80,7 +80,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         setState(() {
           _errorMessage = _getText(
               'حدث خطأ. يرجى التحقق من اتصالك والمحاولة مرة أخرى.',
-              'An error occurred. Please check your connection and try again.');
+              'Une erreur s\'est produite. Veuillez vérifier votre connexion et réessayer.');
         });
       } finally {
         if (mounted) {
@@ -117,14 +117,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
           SnackBar(
               content: Text(responseBody['message'] ??
                   _getText('تم إعادة إرسال رمز التحقق.',
-                      'Verification code resent.'))),
+                      'Code de vérification renvoyé.'))),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(responseBody['error'] ??
-                  _getText(
-                      'فشل في إعادة إرسال الرمز.', 'Failed to resend code.'))),
+                  _getText('فشل في إعادة إرسال الرمز.',
+                      'Échec du renvoi du code.'))),
         );
       }
     } catch (e) {
@@ -132,7 +132,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(_getText('حدث خطأ أثناء إعادة إرسال الرمز.',
-                'An error occurred while resending the code.'))),
+                'Une erreur s\'est produite lors du renvoi du code.'))),
       );
     } finally {
       if (mounted) {
@@ -147,7 +147,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_getText('تحقق من رقم الهاتف', 'Verify Phone Number')),
+        title: Text(
+            _getText('تحقق من رقم الهاتف', 'Vérifier le numéro de téléphone')),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -158,7 +159,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             children: <Widget>[
               Text(
                 _getText('أدخل رمز التحقق المرسل إلى ${widget.phoneNumber}',
-                    'Enter the verification code sent to ${widget.phoneNumber}'),
+                    'Entrez le code de vérification envoyé au ${widget.phoneNumber}'),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
@@ -166,10 +167,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
               TextFormField(
                 controller: _codeController,
                 decoration: InputDecoration(
-                  labelText: _getText('رمز التحقق', 'Verification Code'),
+                  labelText: _getText('رمز التحقق', 'Code de vérification'),
                   border: const OutlineInputBorder(),
-                  hintText: _getText(
-                      'أدخل الرمز المكون من 6 أرقام', 'Enter 6-digit code'),
+                  hintText: _getText('أدخل الرمز المكون من 6 أرقام',
+                      'Entrez le code à 6 chiffres'),
                   counterText: "",
                 ),
                 keyboardType: TextInputType.number,
@@ -177,11 +178,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return _getText(
-                        'يرجى إدخال الرمز', 'Please enter the code');
+                        'يرجى إدخال الرمز', 'Veuillez entrer le code');
                   }
                   if (value.length != 6) {
-                    return _getText(
-                        'يجب أن يكون الرمز 6 أرقام', 'Code must be 6 digits');
+                    return _getText('يجب أن يكون الرمز 6 أرقام',
+                        'Le code doit contenir 6 chiffres');
                   }
                   return null;
                 },
@@ -204,7 +205,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size.fromHeight(50),
                       ),
-                      child: Text(_getText('تحقق', 'Verify')),
+                      child: Text(_getText('تحقق', 'Vérifier')),
                     ),
               const SizedBox(height: 15),
               _isResending
@@ -215,7 +216,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     )
                   : TextButton(
                       onPressed: _isLoading ? null : _resendCode,
-                      child: Text(_getText('إعادة إرسال الرمز', 'Resend Code')),
+                      child: Text(
+                          _getText('إعادة إرسال الرمز', 'Renvoyer le code')),
                     ),
             ],
           ),

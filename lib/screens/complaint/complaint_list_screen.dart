@@ -800,6 +800,9 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
               _buildFilterOption(
                   'PENDING', 'En attente', Icons.schedule_rounded),
               _buildFilterOption(
+                  'IN_PROGRESS', 'En cours', Icons.hourglass_empty_rounded),
+              _buildFilterOption('DELEGATED', 'Délégué', Icons.forward_rounded),
+              _buildFilterOption(
                   'REVIEWING', 'En examen', Icons.visibility_rounded),
               _buildFilterOption(
                   'RESOLVED', 'Résolues', Icons.check_circle_rounded),

@@ -8,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // For token
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:citoyen_app/screens/auth/auth_screen.dart';
+import 'contact_us_screen.dart';
 
 // --- Configuration ---
 // Replace with your actual API base URL
@@ -661,15 +663,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Add other actions like Change Password, Logout etc.
     return Column(
       children: [
-        _buildProfileOption(
-            context, Icons.lock_outline_rounded, "Changer le mot de passe", () {
-          /* TODO */
-        }),
-        _buildProfileOption(context, Icons.notifications_outlined,
-            "Préférences de notification", () {/* TODO */}),
-        _buildProfileOption(
-            context, Icons.help_outline_rounded, "Aide et Support", () {
-          /* TODO */
+        _buildProfileOption(context, Icons.info_outline_rounded, "About Us",
+            () {
+          // TODO: Navigate to About Us screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ContactUsScreen(),
+            ),
+          );
         }),
         const SizedBox(height: 24),
         ElevatedButton.icon(
@@ -680,13 +682,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   fontWeight: FontWeight.bold,
                   color: colors.onError)),
           onPressed: () async {
-            // TODO: Implement proper logout (clear token, navigate)
             final prefs = await SharedPreferences.getInstance();
             await prefs.remove("auth_token");
             if (mounted) {
-              // Navigate to login screen and remove all previous routes
-              // Navigator.of(context).pushAndRemoveUntil(...);
-              print("Logout Tapped - Implement Navigation");
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const AuthScreen()),
+                (Route<dynamic> route) => false,
+              );
             }
           },
           style: ElevatedButton.styleFrom(
