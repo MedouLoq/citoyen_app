@@ -35,7 +35,8 @@ class NotificationProvider with ChangeNotifier {
     _errorMessage = '';
     notifyListeners();
 
-    const String baseUrl = 'http://10.0.2.2:8000'; // Replace with your base URL
+    const String baseUrl =
+        'http://192.168.66.228:8000'; // Replace with your base URL
 
     final token = await _getToken();
 
@@ -75,7 +76,8 @@ class NotificationProvider with ChangeNotifier {
   }
 
   Future<void> markAsRead(String notificationId) async {
-    const String baseUrl = 'http://10.0.2.2:8000'; // Replace with your base URL
+    const String baseUrl =
+        'http://192.168.66.228:8000'; // Replace with your base URL
 
     final token = await _getToken();
 
@@ -112,7 +114,8 @@ class NotificationProvider with ChangeNotifier {
   }
 
   Future<void> markAllAsRead() async {
-    const String baseUrl = 'http://10.0.2.2:8000'; // Replace with your base URL
+    const String baseUrl =
+        'http://192.168.66.228:8000'; // Replace with your base URL
 
     final token = await _getToken();
 
