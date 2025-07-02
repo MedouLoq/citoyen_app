@@ -13,7 +13,7 @@ import 'contact_us_screen.dart';
 
 // --- Configuration ---
 // Replace with your actual API base URL
-const String API_BASE_URL = "http://192.168.66.228:8000";
+const String API_BASE_URL = "http://10.0.2.2:8000";
 const String PROFILE_URL = "$API_BASE_URL/api/profile/";
 const String PROFILE_UPDATE_URL = "$API_BASE_URL/api/profile/update/";
 
