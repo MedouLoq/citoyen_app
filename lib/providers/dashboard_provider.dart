@@ -11,6 +11,9 @@ class DashboardProvider with ChangeNotifier {
   String _userName = 'Utilisateur';
   String get userName => _userName;
 
+  String _municipality = 'Municipalité';
+  String get municipality => _municipality;
+
   int _problemCount = 0;
   int get problemCount => _problemCount;
 
@@ -48,7 +51,8 @@ class DashboardProvider with ChangeNotifier {
     _errorMessage = '';
     notifyListeners();
 
-    const String baseUrl = 'http://10.0.2.2:8000'; // Replace with your base URL
+    const String baseUrl =
+        'http://192.168.137.1:8000'; // Replace with your base URL
 
     final token = await _getToken(); // Use helper function to get token
 
@@ -84,7 +88,7 @@ class DashboardProvider with ChangeNotifier {
         }
       }
 
-      const String API_BASE_URL = "http://10.0.2.2:8000";
+      const String API_BASE_URL = "http://192.168.137.1:8000";
       const String PROFILE_URL = "$API_BASE_URL/api/profile/";
       // Fetch user profile
 // Add this debug code in your Flutter app
@@ -109,6 +113,9 @@ class DashboardProvider with ChangeNotifier {
       _userName = profileData['citizen_profile']?['full_name'] ??
           profileData['username'] ??
           'Utilisateur';
+      _municipality = profileData['citizen_profile']?['municipality']
+              ?['name'] ??
+          'Unknown Municipality';
       // Fetch dashboard stats
       final statsData = await _apiCall('/api/dashboard/stats/');
       _problemCount = statsData['problem_count'] ?? 0;

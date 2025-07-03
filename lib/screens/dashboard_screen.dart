@@ -13,6 +13,7 @@ import 'package:citoyen_app/screens/problem/report_problem_details_screen.dart';
 import 'package:citoyen_app/screens/profile/profile_screen.dart';
 import 'package:citoyen_app/screens/dashboard_home_tab.dart';
 import 'package:provider/provider.dart'; // Import Provider
+import 'package:citoyen_app/l10n/app_localizations.dart';
 import 'problem/category_selection_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -42,12 +43,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context);
     return Consumer<DashboardProvider>(
         builder: (context, dashboardProvider, child) {
       return Scaffold(
         backgroundColor: colors.background,
         appBar: AppBar(
-          title: Text('Tableau de Bord',
+          title: Text(localizations?.dashboardTitle ?? 'Tableau de Bord',
               style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
           automaticallyImplyLeading: false, // No back button on main dashboard
           actions: [
@@ -85,7 +87,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
                 backgroundColor: colors.primary,
                 icon: Icon(Icons.add_comment_outlined, color: colors.onPrimary),
-                label: Text('Signaler',
+                label: Text(localizations?.reportButton ?? 'Signaler',
                     style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600, color: colors.onPrimary)),
               ).animate().scale(

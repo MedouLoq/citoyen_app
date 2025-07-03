@@ -108,7 +108,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _isLoading = true;
       });
 
-      const String apiUrl = 'http://10.0.2.2:8000/api/login/';
+      const String apiUrl = 'http://192.168.137.1:8000/api/login/';
 
       try {
         final response = await http
@@ -120,7 +120,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 'password': _loginPasswordController.text,
               }),
             )
-            .timeout(const Duration(seconds: 120));
+            .timeout(const Duration(seconds: 12));
 
         if (response.statusCode == 200) {
           final responseData = jsonDecode(response.body);
@@ -194,7 +194,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     try {
       final response = await http
           .post(
-            Uri.parse('http://10.0.2.2:8000/api/send-code/'),
+            Uri.parse('http://192.168.137.1:8000/api/send-code/'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'phone_number': phoneNumber,
@@ -218,7 +218,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _isLoading = true;
       });
 
-      const String apiUrl = 'http://10.0.2.2:8000/api/register/';
+      const String apiUrl = 'http://192.168.137.1:8000/api/register/';
 
       try {
         final response = await http
@@ -700,8 +700,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               items: (String filter, _) async {
                 try {
                   final res = await http
-                      .get(
-                          Uri.parse('http://10.0.2.2:8000/api/municipalities/'))
+                      .get(Uri.parse(
+                          'http://192.168.137.1:8000/api/municipalities/'))
                       .timeout(const Duration(seconds: 10));
                   if (res.statusCode == 200) {
                     final List data = jsonDecode(res.body);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // Assuming problem_details_screen.dart exists and defines ProblemDetailsScreen
 // Assuming category_model.dart exists and defines CategoryModel
 import 'report_problem_details_screen.dart';
+import 'package:citoyen_app/l10n/app_localizations.dart';
 
 class CategorySelectionScreen extends StatelessWidget {
   // Replace with your actual category data, potentially fetched from an API
@@ -25,9 +26,11 @@ class CategorySelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Choisir une catégorie'),
+        title: Text(
+            localizations?.categorySelectionTitle ?? 'Choisir une catégorie'),
         // Add styling as needed
       ),
       body: Padding(
@@ -86,7 +89,7 @@ class _CategoryGridItemState extends State<CategoryGridItem>
     _controller.forward();
   }
 
-  void _handleTapUp(TapUpDetails details) {
+  void _handleTapUp(details) {
     _controller.reverse();
     // Navigate to the details screen
     Navigator.push(
@@ -104,6 +107,31 @@ class _CategoryGridItemState extends State<CategoryGridItem>
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    String localizedCategoryName = widget.category.name;
+    switch (widget.category.name) {
+      case 'Routes':
+        localizedCategoryName = localizations?.categoryRoads ?? 'Routes';
+        break;
+      case 'Eau':
+        localizedCategoryName = localizations?.categoryWater ?? 'Eau';
+        break;
+      case 'Électricité':
+        localizedCategoryName =
+            localizations?.categoryElectricity ?? 'Électricité';
+        break;
+      case 'Déchets':
+        localizedCategoryName = localizations?.categoryWaste ?? 'Déchets';
+        break;
+      case 'Permis de construire ou de démolir':
+        localizedCategoryName = localizations?.categoryBuildingPermit ??
+            'Permis de construire ou de démolir';
+        break;
+      case 'Autre':
+        localizedCategoryName = localizations?.categoryOther ?? 'Autre';
+        break;
+    }
+
     return GestureDetector(
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
@@ -131,12 +159,15 @@ class _CategoryGridItemState extends State<CategoryGridItem>
                   width: 60,
                   errorBuilder: (context, error, stackTrace) {
                     // Placeholder in case image loading fails
-                    return Icon(Icons.image_not_supported, size: 60);
+                    return Icon(Icons.image_not_supported,
+                        size: 60,
+                        semanticLabel: localizations?.imageNotSupported ??
+                            'Image non supportée');
                   },
                 ),
                 SizedBox(height: 12.0),
                 Text(
-                  widget.category.name,
+                  localizedCategoryName,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -165,12 +196,15 @@ class ProblemDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Signaler: ${category.name}'),
+        title: Text(
+            '${localizations?.reportCategory ?? 'Signaler: '}${category.name}'),
       ),
       body: Center(
-        child: Text('Details for ${category.name}'),
+        child: Text(
+            '${localizations?.detailsFor ?? 'Détails pour '}${category.name}'),
       ),
     );
   }

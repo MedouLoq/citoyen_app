@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:citoyen_app/providers/complaint_provider.dart';
 import 'package:intl/intl.dart';
 import 'complaint_detail_screen.dart';
+import 'package:citoyen_app/l10n/app_localizations.dart';
 
 class ComplaintListScreen extends StatefulWidget {
   const ComplaintListScreen({Key? key}) : super(key: key);
@@ -63,6 +64,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
   // Enhanced fetch with retry mechanism
   Future<void> _fetchComplaintsWithRetry({int retryCount = 0}) async {
     final provider = Provider.of<ComplaintProvider>(context, listen: false);
+    final localizations = AppLocalizations.of(context);
 
     try {
       await provider.fetchComplaints();
@@ -79,11 +81,11 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
+              content: Text(localizations?.unableToLoadComplaints ??
                   'Impossible de charger les réclamations. Vérifiez votre connexion.'),
               backgroundColor: Colors.red,
               action: SnackBarAction(
-                label: 'Réessayer',
+                label: localizations?.retry ?? 'Réessayer',
                 textColor: Colors.white,
                 onPressed: () => _fetchComplaintsWithRetry(),
               ),
@@ -97,6 +99,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
   // Enhanced pull-to-refresh handler
   Future<void> _onRefresh() async {
     _refreshAnimationController.repeat();
+    final localizations = AppLocalizations.of(context);
 
     try {
       await Provider.of<ComplaintProvider>(context, listen: false)
@@ -108,7 +111,8 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de l\'actualisation'),
+            content: Text(localizations?.errorDuringRefresh ??
+                'Erreur lors de l\'actualisation'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -122,12 +126,13 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: colors.surface,
       appBar: AppBar(
         title: Text(
-          'Mes Réclamations',
+          localizations?.myComplaints ?? 'Mes Réclamations',
           style: GoogleFonts.inter(
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -141,7 +146,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
           IconButton(
             icon: const Icon(Icons.filter_list_rounded),
             onPressed: _showFilterDialog,
-            tooltip: 'Filtrer',
+            tooltip: localizations?.filter ?? 'Filtrer',
           ),
           AnimatedBuilder(
             animation: _refreshRotation,
@@ -151,7 +156,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
                 child: IconButton(
                   icon: const Icon(Icons.refresh_rounded),
                   onPressed: _onRefresh,
-                  tooltip: 'Actualiser',
+                  tooltip: localizations?.refresh ?? 'Actualiser',
                 ),
               );
             },
@@ -234,6 +239,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
   Widget _buildEnhancedFilterChips(
       ColorScheme colors, ComplaintProvider provider) {
     final stats = provider.complaintsStats;
+    final localizations = AppLocalizations.of(context);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 16),
@@ -242,20 +248,32 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            _buildEnhancedFilterChip(
-                'ALL', 'Toutes', colors, provider.totalComplaintsCount),
+            _buildEnhancedFilterChip('ALL', localizations?.all ?? 'Toutes',
+                colors, provider.totalComplaintsCount),
             const SizedBox(width: 12),
             _buildEnhancedFilterChip(
-                'PENDING', 'En attente', colors, stats['PENDING'] ?? 0),
+                'PENDING',
+                localizations?.pending ?? 'En attente',
+                colors,
+                stats['PENDING'] ?? 0),
             const SizedBox(width: 12),
             _buildEnhancedFilterChip(
-                'REVIEWING', 'En examen', colors, stats['REVIEWING'] ?? 0),
+                'REVIEWING',
+                localizations?.reviewing ?? 'En examen',
+                colors,
+                stats['REVIEWING'] ?? 0),
             const SizedBox(width: 12),
             _buildEnhancedFilterChip(
-                'RESOLVED', 'Résolues', colors, stats['RESOLVED'] ?? 0),
+                'RESOLVED',
+                localizations?.resolved ?? 'Résolues',
+                colors,
+                stats['RESOLVED'] ?? 0),
             const SizedBox(width: 12),
             _buildEnhancedFilterChip(
-                'REJECTED', 'Rejetées', colors, stats['REJECTED'] ?? 0),
+                'REJECTED',
+                localizations?.rejected ?? 'Rejetées',
+                colors,
+                stats['REJECTED'] ?? 0),
           ],
         ),
       ),
@@ -328,6 +346,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
 
   Widget _buildComplaintStats(List<Map<String, dynamic>> filteredComplaints,
       ColorScheme colors, ComplaintProvider provider) {
+    final localizations = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       padding: const EdgeInsets.all(16),
@@ -356,7 +375,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${filteredComplaints.length} réclamation${filteredComplaints.length > 1 ? 's' : ''}',
+                  '${filteredComplaints.length} ${localizations?.complaints ?? 'réclamations'}',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -365,7 +384,8 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
                 ),
                 if (_filterStatus != 'ALL')
                   Text(
-                    'sur ${provider.totalComplaintsCount} au total',
+                    localizations?.outOfTotal(provider.totalComplaintsCount) ??
+                        'sur ${provider.totalComplaintsCount} au total',
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: colors.onSurface.withOpacity(0.6),
@@ -381,6 +401,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
 
   Widget _buildEnhancedComplaintCard(
       Map<String, dynamic> complaint, ColorScheme colors, int index) {
+    final localizations = AppLocalizations.of(context);
     final statusColors = {
       'PENDING': colors.secondary,
       'REVIEWING': Colors.blue,
@@ -389,10 +410,10 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
     };
 
     final statusLabels = {
-      'PENDING': 'En attente',
-      'REVIEWING': 'En examen',
-      'RESOLVED': 'Résolue',
-      'REJECTED': 'Rejetée',
+      'PENDING': localizations?.pendingStatus ?? 'En attente',
+      'REVIEWING': localizations?.reviewingStatus ?? 'En examen',
+      'RESOLVED': localizations?.resolvedStatus ?? 'Résolue',
+      'REJECTED': localizations?.rejectedStatus ?? 'Rejetée',
     };
 
     final statusIcons = {
@@ -403,7 +424,8 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
     };
 
     final statusColor = statusColors[complaint['status']] ?? colors.primary;
-    final statusLabel = statusLabels[complaint['status']] ?? 'Inconnu';
+    final statusLabel = statusLabels[complaint['status']] ??
+        (localizations?.unknownStatus ?? 'Inconnu');
     final statusIcon = statusIcons[complaint['status']] ?? Icons.help_outline;
 
     // Format date
@@ -416,17 +438,17 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
       final now = DateTime.now();
       final difference = now.difference(date);
       if (difference.inDays > 0) {
-        timeAgo =
+        timeAgo = localizations?.daysAgo(difference.inDays) ??
             'il y a ${difference.inDays} jour${difference.inDays > 1 ? 's' : ''}';
       } else if (difference.inHours > 0) {
-        timeAgo =
+        timeAgo = localizations?.hoursAgo(difference.inHours) ??
             'il y a ${difference.inHours} heure${difference.inHours > 1 ? 's' : ''}';
       } else {
-        timeAgo =
+        timeAgo = localizations?.minutesAgo(difference.inMinutes) ??
             'il y a ${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''}';
       }
     } catch (e) {
-      formattedDate = 'Date inconnue';
+      formattedDate = localizations?.unknownDate ?? 'Date inconnue';
       timeAgo = '';
     }
 
@@ -555,7 +577,9 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
 
                         // Subject
                         Text(
-                          complaint['subject'] ?? 'Sujet non spécifié',
+                          complaint['subject'] ??
+                              (localizations?.subjectNotSpecified ??
+                                  'Sujet non spécifié'),
                           style: GoogleFonts.inter(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
@@ -570,7 +594,9 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
 
                         // Description preview
                         Text(
-                          complaint['description'] ?? 'Pas de description',
+                          complaint['description'] ??
+                              (localizations?.noDescription ??
+                                  'Pas de description'),
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             color: colors.onSurface.withOpacity(0.7),
@@ -599,7 +625,9 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
                                     Expanded(
                                       child: Text(
                                         complaint['municipality']['name'] ??
-                                            'Municipalité inconnue',
+                                            (localizations
+                                                    ?.unknownMunicipality ??
+                                                'Municipalité inconnue'),
                                         style: GoogleFonts.inter(
                                           fontSize: 13,
                                           color:
@@ -671,7 +699,8 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
-                                            'Image non disponible',
+                                            localizations?.imageNotAvailable ??
+                                                'Image non disponible',
                                             style: GoogleFonts.inter(
                                               fontSize: 12,
                                               color: colors.onSurfaceVariant,
@@ -741,6 +770,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
   }
 
   Widget _buildEnhancedFAB(ColorScheme colors) {
+    final localizations = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -758,7 +788,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
         },
         icon: const Icon(Icons.add_rounded),
         label: Text(
-          'Nouvelle Réclamation',
+          localizations?.newComplaint ?? 'Nouvelle Réclamation',
           style: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             fontSize: 14,
@@ -775,6 +805,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
   }
 
   void _showFilterDialog() {
+    final localizations = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) {
@@ -787,7 +818,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
               Icon(Icons.filter_list_rounded, color: colors.primary),
               const SizedBox(width: 8),
               Text(
-                'Filtrer par statut',
+                localizations?.filterByStatus ?? 'Filtrer par statut',
                 style: GoogleFonts.inter(fontWeight: FontWeight.bold),
               ),
             ],
@@ -796,24 +827,40 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildFilterOption(
-                  'ALL', 'Toutes les réclamations', Icons.list_rounded),
+                  'ALL',
+                  localizations?.allComplaints ?? 'Toutes les réclamations',
+                  Icons.list_rounded),
               _buildFilterOption(
-                  'PENDING', 'En attente', Icons.schedule_rounded),
+                  'PENDING',
+                  localizations?.pendingComplaints ?? 'En attente',
+                  Icons.schedule_rounded),
               _buildFilterOption(
-                  'IN_PROGRESS', 'En cours', Icons.hourglass_empty_rounded),
-              _buildFilterOption('DELEGATED', 'Délégué', Icons.forward_rounded),
+                  'IN_PROGRESS',
+                  localizations?.inProgressComplaints ?? 'En cours',
+                  Icons.hourglass_empty_rounded),
               _buildFilterOption(
-                  'REVIEWING', 'En examen', Icons.visibility_rounded),
+                  'DELEGATED',
+                  localizations?.delegatedComplaints ?? 'Délégué',
+                  Icons.forward_rounded),
               _buildFilterOption(
-                  'RESOLVED', 'Résolues', Icons.check_circle_rounded),
-              _buildFilterOption('REJECTED', 'Rejetées', Icons.cancel_rounded),
+                  'REVIEWING',
+                  localizations?.reviewingComplaints ?? 'En examen',
+                  Icons.visibility_rounded),
+              _buildFilterOption(
+                  'RESOLVED',
+                  localizations?.resolvedComplaints ?? 'Résolues',
+                  Icons.check_circle_rounded),
+              _buildFilterOption(
+                  'REJECTED',
+                  localizations?.rejectedComplaints ?? 'Rejetées',
+                  Icons.cancel_rounded),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
-                'Fermer',
+                localizations?.close ?? 'Fermer',
                 style: GoogleFonts.inter(color: colors.primary),
               ),
             ),
@@ -849,6 +896,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
   }
 
   Widget _buildEnhancedLoadingState(ColorScheme colors) {
+    final localizations = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -866,7 +914,8 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
           ),
           const SizedBox(height: 24),
           Text(
-            'Chargement des réclamations...',
+            localizations?.loadingComplaints ??
+                'Chargement des réclamations...',
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -875,7 +924,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Veuillez patienter',
+            localizations?.pleaseWait ?? 'Veuillez patienter',
             style: GoogleFonts.inter(
               fontSize: 14,
               color: colors.onSurface.withOpacity(0.6),
@@ -887,6 +936,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
   }
 
   Widget _buildEnhancedErrorState(String errorMessage, ColorScheme colors) {
+    final localizations = AppLocalizations.of(context);
     return RefreshIndicator(
       onRefresh: _onRefresh,
       child: SingleChildScrollView(
@@ -911,7 +961,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
               ),
               const SizedBox(height: 24),
               Text(
-                'Oups! Une erreur est survenue',
+                localizations?.oopsError ?? 'Oups! Une erreur est survenue',
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -937,7 +987,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
                     onPressed: _fetchComplaintsWithRetry,
                     icon: const Icon(Icons.refresh_rounded),
                     label: Text(
-                      'Réessayer',
+                      localizations?.retry ?? 'Réessayer',
                       style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -954,7 +1004,8 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                'Tirez vers le bas pour actualiser',
+                localizations?.pullToRefresh ??
+                    'Tirez vers le bas pour actualiser',
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   color: colors.onSurface.withOpacity(0.5),
@@ -969,6 +1020,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
   }
 
   Widget _buildEnhancedEmptyState(ColorScheme colors) {
+    final localizations = AppLocalizations.of(context);
     return RefreshIndicator(
       onRefresh: _onRefresh,
       child: SingleChildScrollView(
@@ -1000,7 +1052,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
               ),
               const SizedBox(height: 24),
               Text(
-                'Aucune réclamation',
+                localizations?.noComplaints ?? 'Aucune réclamation',
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -1009,7 +1061,8 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
               ),
               const SizedBox(height: 12),
               Text(
-                'Vous n\'avez pas encore soumis de réclamation.\nCommencez par créer votre première réclamation.',
+                localizations?.noComplaintsMessage ??
+                    'Vous n\'avez pas encore soumis de réclamation.\nCommencez par créer votre première réclamation.',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   color: colors.onSurface.withOpacity(0.7),
@@ -1024,7 +1077,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
                 },
                 icon: const Icon(Icons.add_rounded),
                 label: Text(
-                  'Créer une réclamation',
+                  localizations?.createComplaint ?? 'Créer une réclamation',
                   style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -1039,7 +1092,8 @@ class _ComplaintListScreenState extends State<ComplaintListScreen>
               ),
               const SizedBox(height: 24),
               Text(
-                'Tirez vers le bas pour actualiser',
+                localizations?.pullToRefresh ??
+                    'Tirez vers le bas pour actualiser',
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   color: colors.onSurface.withOpacity(0.5),

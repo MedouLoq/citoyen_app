@@ -10,6 +10,7 @@ import 'dart:math' as math;
 import 'package:citoyen_app/screens/problem/problem_detail_screen.dart';
 import 'package:citoyen_app/screens/problem/problem_list_screen.dart';
 import 'package:citoyen_app/providers/problem_provider.dart';
+import 'package:citoyen_app/l10n/app_localizations.dart';
 import 'complaint/complaint_detail_screen.dart';
 import 'problem/category_selection_screen.dart';
 
@@ -92,7 +93,9 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
               children: [
                 Icon(Icons.check_circle, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
-                Text('Dashboard mis à jour avec succès'),
+                Text(AppLocalizations.of(context)
+                        ?.dashboardUpdatedSuccessfully ??
+                    'Dashboard mis à jour avec succès'),
               ],
             ),
             backgroundColor: Colors.green,
@@ -112,7 +115,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
               children: [
                 Icon(Icons.error, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
-                Text('Erreur lors de la mise à jour'),
+                Text(AppLocalizations.of(context)?.errorUpdatingDashboard ??
+                    'Erreur lors de la mise à jour'),
               ],
             ),
             backgroundColor: Colors.red,
@@ -146,14 +150,16 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final size = MediaQuery.of(context).size;
+    final localizations = AppLocalizations.of(context);
 
     return Consumer<DashboardProvider>(
       builder: (context, dashboardProvider, _) {
         if (dashboardProvider.isLoading && !_isRefreshing) {
-          return _buildLoadingState(colors);
+          return _buildLoadingState(colors, localizations);
         } else if (dashboardProvider.errorMessage.isNotEmpty &&
             !_isRefreshing) {
-          return _buildErrorState(dashboardProvider.errorMessage, colors);
+          return _buildErrorState(
+              dashboardProvider.errorMessage, colors, localizations);
         } else {
           return RefreshIndicator(
             key: _refreshIndicatorKey,
@@ -169,12 +175,14 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
               slivers: [
                 // Beautiful Header with Parallax Effect
                 SliverToBoxAdapter(
-                  child: _buildWelcomeHeader(context, dashboardProvider, size),
+                  child: _buildWelcomeHeader(
+                      context, dashboardProvider, size, localizations),
                 ),
 
                 // Quick Actions Section
                 SliverToBoxAdapter(
-                  child: _buildQuickActionsSection(context, colors),
+                  child:
+                      _buildQuickActionsSection(context, colors, localizations),
                 ),
 
                 // Stats Header
@@ -187,7 +195,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                             color: colors.primary, size: 24),
                         const SizedBox(width: 8),
                         Text(
-                          'Vos Statistiques',
+                          localizations?.yourStatistics ?? 'Vos Statistiques',
                           style: GoogleFonts.inter(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
@@ -216,7 +224,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
 
                 // Stats Cards - Horizontal Scroll
                 SliverToBoxAdapter(
-                  child: _buildStatCardsRow(context, dashboardProvider, colors),
+                  child: _buildStatCardsRow(
+                      context, dashboardProvider, colors, localizations),
                 ),
 
                 // Recent Activity Section
@@ -232,7 +241,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                                 color: colors.primary, size: 24),
                             const SizedBox(width: 8),
                             Text(
-                              'Activité Récente',
+                              localizations?.recentActivity ??
+                                  'Activité Récente',
                               style: GoogleFonts.inter(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
@@ -259,7 +269,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                             icon: Icon(Icons.list_alt,
                                 size: 16, color: colors.primary),
                             label: Text(
-                              'Tout voir',
+                              localizations?.viewAll ?? 'Tout voir',
                               style: GoogleFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -295,7 +305,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                 // Activity Items
                 dashboardProvider.recentActivity.isEmpty
                     ? SliverToBoxAdapter(
-                        child: _buildEmptyActivityState(colors),
+                        child: _buildEmptyActivityState(colors, localizations),
                       )
                     : SliverList(
                         delegate: SliverChildBuilderDelegate(
@@ -304,9 +314,10 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                                 dashboardProvider.recentActivity[index];
                             return _buildActivityItem(
                                 context,
-                                _getActivityTitle(activity),
-                                _getActivitySubtitle(activity),
-                                _formatTimeAgo(activity['changed_at']),
+                                _getActivityTitle(activity, localizations),
+                                _getActivitySubtitle(activity, localizations),
+                                _formatTimeAgo(
+                                    activity["changed_at"], localizations),
                                 _getActivityIcon(activity),
                                 _getActivityIconColor(activity, colors),
                                 index,
@@ -329,7 +340,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   }
 
   // Beautiful animated loading state
-  Widget _buildLoadingState(ColorScheme colors) {
+  Widget _buildLoadingState(
+      ColorScheme colors, AppLocalizations? localizations) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -358,7 +370,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
               ),
           const SizedBox(height: 24),
           Text(
-            'Chargement de votre dashboard...',
+            localizations?.loadingProblems ??
+                'Chargement de votre dashboard...',
             style: GoogleFonts.inter(
               fontSize: 16,
               color: colors.onBackground.withOpacity(0.7),
@@ -373,7 +386,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   }
 
   // Error state with retry button
-  Widget _buildErrorState(String errorMessage, ColorScheme colors) {
+  Widget _buildErrorState(String errorMessage, ColorScheme colors,
+      AppLocalizations? localizations) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -391,7 +405,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                 .shake(hz: 4, rotation: 0.1),
             const SizedBox(height: 24),
             Text(
-              'Une erreur est survenue',
+              localizations?.loadingError ?? 'Une erreur est survenue',
               style: GoogleFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -414,7 +428,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                     .fetchData(context);
               },
               icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
+              label: Text(localizations?.retry ?? 'Réessayer'),
               style: ElevatedButton.styleFrom(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -433,7 +447,10 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
 
   // Beautiful welcome header with wave pattern and avatar
   Widget _buildWelcomeHeader(
-      BuildContext context, DashboardProvider dashboardProvider, Size size) {
+      BuildContext context,
+      DashboardProvider dashboardProvider,
+      Size size,
+      AppLocalizations? localizations) {
     final colors = Theme.of(context).colorScheme;
 
     // Calculate parallax effect based on scroll
@@ -548,7 +565,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Bonjour,',
+                          localizations?.bnjr ?? 'Bonjour,',
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
@@ -620,7 +637,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Votre quartier',
+                                dashboardProvider.municipality,
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
@@ -672,7 +689,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'Mise à jour...',
+                                  localizations?.updating ?? 'Mise à jour...',
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -786,7 +803,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   }
 
   // Quick Actions Section
-  Widget _buildQuickActionsSection(BuildContext context, ColorScheme colors) {
+  Widget _buildQuickActionsSection(BuildContext context, ColorScheme colors,
+      AppLocalizations? localizations) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
@@ -799,7 +817,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                 Icon(Icons.flash_on, color: colors.primary, size: 20),
                 const SizedBox(width: 6),
                 Text(
-                  'Actions Rapides',
+                  localizations?.quickActions ?? 'Actions Rapides',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -814,7 +832,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
               Expanded(
                 child: _buildQuickActionCard(
                   context,
-                  'Signaler',
+                  localizations?.reportButton ?? 'Signaler',
                   Icons.add_alert_outlined,
                   colors.primary,
                   () {
@@ -832,7 +850,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
               Expanded(
                 child: _buildQuickActionCard(
                   context,
-                  'Mes Signalements',
+                  localizations?.myReports ?? 'Mes Signalements',
                   Icons.list_alt_outlined,
                   colors.secondary,
                   () {
@@ -871,6 +889,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
 
   Widget _buildQuickActionCard(BuildContext context, String title,
       IconData icon, Color color, VoidCallback onTap, int index) {
+    final colors = Theme.of(context).colorScheme;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -921,8 +941,11 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   }
 
   // Horizontal scrolling stats cards
-  Widget _buildStatCardsRow(BuildContext context,
-      DashboardProvider dashboardProvider, ColorScheme colors) {
+  Widget _buildStatCardsRow(
+      BuildContext context,
+      DashboardProvider dashboardProvider,
+      ColorScheme colors,
+      AppLocalizations? localizations) {
     return SizedBox(
       height: 175, // Reduced by 5 pixels to fix overload
       child: ListView(
@@ -933,7 +956,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
         children: [
           _buildStatCard(
             context,
-            'Problèmes Signalés',
+            localizations?.problemsReported ?? 'Problèmes Signalés',
             dashboardProvider.problemCount.toString(),
             Icons.report_problem_rounded,
             colors.error,
@@ -941,7 +964,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
           ),
           _buildStatCard(
             context,
-            'En Attente',
+            localizations?.pending ?? 'En Attente',
             dashboardProvider.pendingProblems.toString(),
             Icons.hourglass_top_rounded,
             colors.secondary,
@@ -949,7 +972,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
           ),
           _buildStatCard(
             context,
-            'Réclamations',
+            localizations?.complaints ?? 'Réclamations',
             dashboardProvider.complaintCount.toString(),
             Icons.comment_bank_rounded,
             Colors.purple,
@@ -957,7 +980,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
           ),
           _buildStatCard(
             context,
-            'Résolus',
+            localizations?.resolved ?? 'Résolus',
             dashboardProvider.resolvedProblems.toString(),
             Icons.check_circle_rounded,
             Colors.green,
@@ -1013,7 +1036,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                   color: iconBackColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, size: 22, color: color), // Reduced icon size
+                child: Icon(icon, color: color, size: 22), // Reduced icon size
               ),
 
               const SizedBox(height: 10), // Reduced spacing
@@ -1073,7 +1096,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   }
 
   // Empty activity state
-  Widget _buildEmptyActivityState(ColorScheme colors) {
+  Widget _buildEmptyActivityState(
+      ColorScheme colors, AppLocalizations? localizations) {
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(32),
@@ -1091,7 +1115,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
           ),
           const SizedBox(height: 16),
           Text(
-            'Aucune activité récente',
+            localizations?.noRecentActivity ?? 'Aucune activité récente',
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -1100,7 +1124,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
           ),
           const SizedBox(height: 8),
           Text(
-            'Vos signalements et réclamations apparaîtront ici',
+            localizations?.noRecentActivityMessage ??
+                'Vos signalements et réclamations apparaîtront ici',
             style: GoogleFonts.inter(
               fontSize: 14,
               color: colors.onSurface.withOpacity(0.5),
@@ -1242,7 +1267,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   }
 
   // Helper functions for activity items - KEEPING EXISTING BACKEND LOGIC
-  String _getActivityTitle(Map<String, dynamic> activity) {
+  String _getActivityTitle(
+      Map<String, dynamic> activity, AppLocalizations? localizations) {
     // Use the title field from the API if available
     if (activity.containsKey('title') && activity['title'] != null) {
       return activity['title'];
@@ -1250,41 +1276,48 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
 
     // Fallback to the old logic if title is not available
     if (activity['record_type'] == 'PROBLEM') {
-      return 'Nouveau problème signalé';
+      return localizations?.newProblemReported ?? 'Nouveau problème signalé';
     } else if (activity['record_type'] == 'COMPLAINT') {
-      return 'Nouvelle réclamation soumise';
+      return localizations?.newComplaintSubmitted ??
+          'Nouvelle réclamation soumise';
     }
-    return 'Activité inconnue';
+    return localizations?.unknownActivity ?? 'Activité inconnue';
   }
 
-  String _getActivitySubtitle(Map<String, dynamic> activity) {
+  String _getActivitySubtitle(
+      Map<String, dynamic> activity, AppLocalizations? localizations) {
     if (activity['record_type'] == 'PROBLEM') {
-      return activity['description'] ?? 'Pas de description';
+      return activity['description'] ??
+          localizations?.noDescription ??
+          'Pas de description';
     } else if (activity['record_type'] == 'COMPLAINT') {
-      return activity['subject'] ?? 'Pas de sujet';
+      return activity['subject'] ?? localizations?.noSubject ?? 'Pas de sujet';
     }
-    return 'Pas de détails';
+    return localizations?.noDescription ?? 'Pas de détails';
   }
 
-  String _formatTimeAgo(String? changedAt) {
-    if (changedAt == null) return 'Inconnu';
+  String _formatTimeAgo(String? changedAt, AppLocalizations? localizations) {
+    if (changedAt == null) return localizations?.unknownTime ?? 'Inconnu';
 
     try {
       DateTime dateTime = DateTime.parse(changedAt).toLocal();
       Duration difference = DateTime.now().toLocal().difference(dateTime);
 
       if (difference.inDays > 0) {
-        return 'Il y a ${difference.inDays} jours';
+        return localizations?.daysAgo(difference.inDays) ??
+            'Il y a ${difference.inDays} jours';
       } else if (difference.inHours > 0) {
-        return 'Il y a ${difference.inHours} heures';
+        return localizations?.hoursAgo(difference.inHours) ??
+            'Il y a ${difference.inHours} heures';
       } else if (difference.inMinutes > 0) {
-        return 'Il y a ${difference.inMinutes} minutes';
+        return localizations?.minutesAgo(difference.inMinutes) ??
+            'Il y a ${difference.inMinutes} minutes';
       } else {
-        return 'À l\'instant';
+        return localizations?.justNow ?? 'À l\'instant';
       }
     } catch (e) {
       print('Error formatting time: $e');
-      return 'Il y a longtemps';
+      return localizations?.longTimeAgo ?? 'Il y a longtemps';
     }
   }
 

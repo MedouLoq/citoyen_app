@@ -468,7 +468,8 @@ class _ReportProblemDetailsScreenState
 // Fix the _fetchMunicipalityId method to handle integer response
   Future<String?> _fetchMunicipalityId(
       String candidateName, double lat, double lon) async {
-    const String baseUrl = "http://10.0.2.2:8000"; // Ensure this is correct
+    const String baseUrl =
+        "http://192.168.137.1:8000"; // Ensure this is correct
     final encodedName = Uri.encodeComponent(candidateName.trim());
     final url = Uri.parse(
         "$baseUrl/get_municipality_id/?name=$encodedName&lat=$lat&lon=$lon");
@@ -730,7 +731,7 @@ class _ReportProblemDetailsScreenState
 
     try {
       var uri = Uri.parse(
-          "http://10.0.2.2:8000/api/problems/report/"); // Ensure correct endpoint
+          "http://192.168.137.1:8000/api/problems/report/"); // Ensure correct endpoint
       var request = http.MultipartRequest("POST", uri);
       request.headers['Authorization'] = 'Token $authToken';
 

@@ -13,6 +13,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:citoyen_app/providers/complaint_provider.dart';
+import 'package:citoyen_app/l10n/app_localizations.dart';
 
 class SubmitComplaintScreen extends StatefulWidget {
   const SubmitComplaintScreen({Key? key}) : super(key: key);
@@ -158,13 +159,16 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   Future<void> _submitComplaint() async {
+    final localizations = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
     if (_selectedMunicipalityId == null) {
-      _showSnackBar('Veuillez sélectionner une municipalité.');
+      _showSnackBar(localizations?.municipalityValidation ??
+          'Veuillez sélectionner une municipalité.');
       return;
     }
     if (_preuveFile == null) {
-      _showSnackBar('Veuillez joindre une preuve (document requis).');
+      _showSnackBar(localizations?.evidenceRequired ??
+          'Veuillez joindre une preuve (document requis).');
       return;
     }
 
@@ -185,16 +189,20 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
       );
 
       if (success) {
-        _showSnackBar('Réclamation soumise avec succès!', isError: false);
+        _showSnackBar(
+            localizations?.submitSuccess ?? 'Réclamation soumise avec succès!',
+            isError: false);
         if (mounted) Navigator.pop(context);
       } else {
         _showSnackBar(
-            'Échec de la soumission de la réclamation. ' +
+            '${localizations?.submitError ?? 'Échec de la soumission de la réclamation.'} ' +
                 complaintProvider.errorMessage,
             isError: true);
       }
     } catch (e) {
-      _showSnackBar('Une erreur inattendue est survenue: $e', isError: true);
+      _showSnackBar(
+          '${localizations?.submitUnexpectedError ?? 'Une erreur inattendue est survenue:'} $e',
+          isError: true);
     } finally {
       setState(() => _isSubmitting = false);
       _submitAnimationController.reset();
@@ -259,6 +267,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   Future<void> _recordVoice() async {
+    final localizations = AppLocalizations.of(context);
     if (_isRecording || _isStoppingRecording) {
       // Stop recording
       if (_isRecording && !_isStoppingRecording) {
@@ -283,7 +292,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
             }
           });
         } catch (e) {
-          _showSnackBar('Erreur lors de l\'arrêt de l\'enregistrement: $e');
+          _showSnackBar(
+              '${localizations?.recordingErrorStop ?? 'Erreur lors de l\'arrêt de l\'enregistrement:'} $e');
           setState(() {
             _isRecording = false;
             _isStoppingRecording = false;
@@ -316,10 +326,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
           _recordingPulseController.repeat(reverse: true);
           _startRecordingTimer();
         } catch (e) {
-          _showSnackBar('Erreur lors du démarrage de l\'enregistrement: $e');
+          _showSnackBar(
+              '${localizations?.recordingErrorStart ?? 'Erreur lors du démarrage de l\'enregistrement:'} $e');
         }
       } else {
-        _showSnackBar('Permission d\'enregistrement audio refusée');
+        _showSnackBar(localizations?.recordingPermissionDenied ??
+            'Permission d\'enregistrement audio refusée');
       }
     }
   }
@@ -339,6 +351,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   Future<void> _playRecordedVoice() async {
+    final localizations = AppLocalizations.of(context);
     if (_isPlaying) {
       await _audioPlayer.pause();
       setState(() {
@@ -352,10 +365,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
             _isPlaying = true;
           });
         } catch (e) {
-          _showSnackBar('Erreur lors de la lecture: $e');
+          _showSnackBar(
+              '${localizations?.playbackError ?? 'Erreur lors de la lecture:'} $e');
         }
       } else {
-        _showSnackBar('Aucun enregistrement vocal disponible.');
+        _showSnackBar(localizations?.noRecordingAvailable ??
+            'Aucun enregistrement vocal disponible.');
       }
     }
   }
@@ -424,6 +439,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context);
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -450,7 +466,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
               ),
               child: FlexibleSpaceBar(
                 title: Text(
-                  'Déposer une Réclamation',
+                  localizations?.submitComplaintTitle ??
+                      'Déposer une Réclamation',
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -561,6 +578,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   Widget _buildWelcomeCard() {
+    final localizations = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -611,7 +629,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Votre voix compte',
+                  localizations?.welcomeTitle ?? 'Votre voix compte',
                   style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -620,7 +638,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Aidez-nous à améliorer nos services ensemble',
+                  localizations?.welcomeSubtitle ??
+                      'Aidez-nous à améliorer nos services ensemble',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     color: const Color(0xFF718096),
@@ -663,8 +682,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   Widget _buildMunicipalitySection(ThemeData theme) {
+    final localizations = AppLocalizations.of(context);
     return _buildSection(
-      title: 'Municipalité Concernée',
+      title: localizations?.municipalitySection ?? 'Municipalité Concernée',
       isRequired: true,
       icon: Icons.location_city_rounded,
       child: Container(
@@ -682,16 +702,50 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
         ),
         child: DropdownButtonFormField<String>(
           value: _selectedMunicipalityId,
-          decoration: const InputDecoration(
-            hintText: 'Sélectionnez une municipalité',
+          decoration: InputDecoration(
+            hintText: localizations?.municipalityPlaceholder ??
+                'Sélectionnez une municipalité',
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           ),
           items: _municipalities.map((municipality) {
+            String municipalityName = municipality['name'];
+            // Use localization for municipality names if available
+            if (localizations != null) {
+              switch (municipalityName) {
+                case 'Tevragh-Zeina':
+                  municipalityName = localizations.tevraghZeina;
+                  break;
+                case 'Ksar':
+                  municipalityName = localizations.ksar;
+                  break;
+                case 'Teyarett':
+                  municipalityName = localizations.teyarett;
+                  break;
+                case 'Toujounine':
+                  municipalityName = localizations.toujounine;
+                  break;
+                case 'Sebkha':
+                  municipalityName = localizations.sebkha;
+                  break;
+                case 'El Mina':
+                  municipalityName = localizations.elMina;
+                  break;
+                case 'Araffat':
+                  municipalityName = localizations.araffat;
+                  break;
+                case 'Riyadh':
+                  municipalityName = localizations.riyadh;
+                  break;
+                case 'Dar Naim ':
+                  municipalityName = localizations.darNaim;
+                  break;
+              }
+            }
             return DropdownMenuItem<String>(
               value: municipality['id'],
               child: Text(
-                municipality['name'],
+                municipalityName,
                 style: GoogleFonts.inter(fontSize: 15),
               ),
             );
@@ -701,7 +755,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
           },
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Veuillez sélectionner une municipalité';
+              return localizations?.municipalityValidation ??
+                  'Veuillez sélectionner une municipalité';
             }
             return null;
           },
@@ -711,8 +766,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   Widget _buildSubjectSection(ThemeData theme) {
+    final localizations = AppLocalizations.of(context);
     return _buildSection(
-      title: 'Sujet de la Réclamation',
+      title: localizations?.subjectSection ?? 'Sujet de la Réclamation',
       isRequired: true,
       icon: Icons.title_rounded,
       child: Container(
@@ -731,17 +787,20 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
         child: TextFormField(
           controller: _subjectController,
           style: GoogleFonts.inter(fontSize: 15),
-          decoration: const InputDecoration(
-            hintText: 'Résumez votre réclamation en quelques mots',
+          decoration: InputDecoration(
+            hintText: localizations?.subjectPlaceholder ??
+                'Résumez votre réclamation en quelques mots',
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
-              return 'Le sujet est requis';
+              return localizations?.subjectValidationRequired ??
+                  'Le sujet est requis';
             }
             if (value.trim().length < 5) {
-              return 'Le sujet doit contenir au moins 5 caractères';
+              return localizations?.subjectValidationMinLength ??
+                  'Le sujet doit contenir au moins 5 caractères';
             }
             return null;
           },
@@ -751,8 +810,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   Widget _buildDescriptionSection(ThemeData theme) {
+    final localizations = AppLocalizations.of(context);
     return _buildSection(
-      title: 'Description Détaillée',
+      title: localizations?.descriptionSection ?? 'Description Détaillée',
       isRequired: true,
       icon: Icons.description_rounded,
       child: Container(
@@ -772,17 +832,20 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
           controller: _descriptionController,
           maxLines: 5,
           style: GoogleFonts.inter(fontSize: 15, height: 1.5),
-          decoration: const InputDecoration(
-            hintText: 'Décrivez votre réclamation en détail...',
+          decoration: InputDecoration(
+            hintText: localizations?.descriptionPlaceholder ??
+                'Décrivez votre réclamation en détail...',
             border: InputBorder.none,
             contentPadding: EdgeInsets.all(20),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
-              return 'La description est requise';
+              return localizations?.descriptionValidationRequired ??
+                  'La description est requise';
             }
             if (value.trim().length < 20) {
-              return 'La description doit contenir au moins 20 caractères';
+              return localizations?.descriptionValidationMinLength ??
+                  'La description doit contenir au moins 20 caractères';
             }
             return null;
           },
@@ -792,8 +855,10 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   Widget _buildVoiceRecordingSection(ThemeData theme) {
+    final localizations = AppLocalizations.of(context);
     return _buildSection(
-      title: 'Message Vocal (Optionnel)',
+      title:
+          localizations?.voiceRecordingSection ?? 'Message Vocal (Optionnel)',
       isRequired: false,
       icon: Icons.mic_rounded,
       child: Container(
@@ -859,7 +924,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
               ),
               const SizedBox(height: 12),
               Text(
-                'Appuyez pour enregistrer',
+                localizations?.voiceRecordingStart ??
+                    'Appuyez pour enregistrer',
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   color: const Color(0xFF4A5568),
@@ -869,7 +935,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
               const SizedBox(height: 6),
               Flexible(
                 child: Text(
-                  'Enregistrez un message vocal pour accompagner votre réclamation',
+                  localizations?.voiceRecordingInstructions ??
+                      'Enregistrez un message vocal pour accompagner votre réclamation',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 12,
@@ -942,8 +1009,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                     const SizedBox(width: 6),
                     Text(
                       _isStoppingRecording
-                          ? 'Arrêt en cours...'
-                          : 'Enregistrement... ${_formatDuration(_recordingDuration)}',
+                          ? (localizations?.voiceRecordingStoppingInProgress ??
+                              'Arrêt en cours...')
+                          : '${localizations?.voiceRecordingInProgress ?? 'Enregistrement...'} ${_formatDuration(_recordingDuration)}',
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: _isStoppingRecording ? Colors.grey : Colors.red,
@@ -956,8 +1024,10 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
               const SizedBox(height: 8),
               Text(
                 _isStoppingRecording
-                    ? 'Veuillez patienter...'
-                    : 'Appuyez sur le bouton pour arrêter',
+                    ? (localizations?.voiceRecordingPleaseWait ??
+                        'Veuillez patienter...')
+                    : (localizations?.voiceRecordingStop ??
+                        'Appuyez sur le bouton pour arrêter'),
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   color: const Color(0xFF718096),
@@ -1019,7 +1089,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Enregistrement prêt',
+                          localizations?.voiceRecordingReady ??
+                              'Enregistrement prêt',
                           style: GoogleFonts.inter(
                             fontSize: 11,
                             color: const Color(0xFF38A169),
@@ -1096,7 +1167,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                 const SizedBox(height: 6),
               ],
               Text(
-                'Appuyez sur lecture pour écouter votre enregistrement',
+                localizations?.voiceRecordingPlayInstructions ??
+                    'Appuyez sur lecture pour écouter votre enregistrement',
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   color: const Color(0xFF38A169),
@@ -1111,17 +1183,19 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   Widget _buildAttachmentsSection(ThemeData theme) {
+    final localizations = AppLocalizations.of(context);
     return _buildSection(
-      title: 'Pièces Jointes',
+      title: localizations?.attachmentsSection ?? 'Pièces Jointes',
       isRequired: false,
       icon: Icons.attach_file_rounded,
       child: Column(
         children: [
           // Photo attachment
           _buildAttachmentCard(
-            title: 'Photo',
-            subtitle:
-                _photoFile != null ? 'Photo sélectionnée' : 'Ajouter une photo',
+            title: localizations?.photoAttachment ?? 'Photo',
+            subtitle: _photoFile != null
+                ? (localizations?.photoSelected ?? 'Photo sélectionnée')
+                : (localizations?.photoAdd ?? 'Ajouter une photo'),
             icon: Icons.photo_camera_rounded,
             isSelected: _photoFile != null,
             onTap: _pickImage,
@@ -1131,9 +1205,10 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
 
           // Video attachment
           _buildAttachmentCard(
-            title: 'Vidéo',
-            subtitle:
-                _videoFile != null ? 'Vidéo sélectionnée' : 'Ajouter une vidéo',
+            title: localizations?.videoAttachment ?? 'Vidéo',
+            subtitle: _videoFile != null
+                ? (localizations?.videoSelected ?? 'Vidéo sélectionnée')
+                : (localizations?.videoAdd ?? 'Ajouter une vidéo'),
             icon: Icons.videocam_rounded,
             isSelected: _videoFile != null,
             onTap: _pickVideo,
@@ -1143,9 +1218,10 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
 
           // Evidence document (required)
           _buildAttachmentCard(
-            title: 'Preuve (Requis)',
-            subtitle:
-                _preuveFile != null ? _preuveFile!.name : 'Ajouter un document',
+            title: localizations?.evidenceAttachment ?? 'Preuve (Requis)',
+            subtitle: _preuveFile != null
+                ? _preuveFile!.name
+                : (localizations?.evidenceAdd ?? 'Ajouter un document'),
             icon: Icons.description_rounded,
             isSelected: _preuveFile != null,
             onTap: _pickPreuve,
@@ -1265,6 +1341,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
   }
 
   Widget _buildSubmitButton(ThemeData theme) {
+    final localizations = AppLocalizations.of(context);
     return SizedBox(
       width: double.infinity,
       height: 60,
@@ -1299,7 +1376,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                         ),
                         const SizedBox(width: 16),
                         Text(
-                          'Soumission en cours...',
+                          localizations?.submitButtonProgress ??
+                              'Soumission en cours...',
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -1316,7 +1394,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen>
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Soumettre la Réclamation',
+                          localizations?.submitButton ??
+                              'Soumettre la Réclamation',
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

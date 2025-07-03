@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:citoyen_app/providers/problem_provider.dart';
 import 'package:intl/intl.dart';
 import 'problem_detail_screen.dart';
+import 'package:citoyen_app/l10n/app_localizations.dart';
 
 class ProblemListScreen extends StatefulWidget {
   const ProblemListScreen({Key? key}) : super(key: key);
@@ -35,498 +36,457 @@ class _ProblemListScreenState extends State<ProblemListScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Mes Problèmes Signalés',
+          localizations?.myReportedProblems ?? 'Mes Problèmes Signalés',
           style: GoogleFonts.inter(
             fontWeight: FontWeight.bold,
+            color: colors.onPrimary,
+            fontSize: 20,
           ),
         ),
-        elevation: 0,
-        backgroundColor: colors.surface,
-        foregroundColor: colors.onSurface,
+        backgroundColor: colors.primary,
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterDialog,
-          ),
-          // Add refresh button in app bar for additional refresh option
-          IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh_rounded, color: colors.onPrimary),
+            tooltip: localizations?.refresh ?? 'Actualiser',
             onPressed: _onRefresh,
-            tooltip: 'Actualiser',
+          ),
+          IconButton(
+            icon: Icon(Icons.filter_list_rounded, color: colors.onPrimary),
+            tooltip: localizations?.filterByStatus ?? 'Filtrer par statut',
+            onPressed: () => _showFilterBottomSheet(context, localizations),
           ),
         ],
       ),
       body: Consumer<ProblemProvider>(
-        builder: (context, problemProvider, _) {
+        builder: (context, problemProvider, child) {
           if (problemProvider.isLoading) {
-            return _buildLoadingState(colors);
-          } else if (problemProvider.errorMessage.isNotEmpty) {
-            return _buildErrorState(problemProvider.errorMessage, colors);
-          } else if (problemProvider.problems.isEmpty) {
-            return _buildEmptyState(colors);
-          } else {
-            // Filter problems based on selected status
-            final filteredProblems = _filterStatus == 'ALL'
-                ? problemProvider.problems
-                : problemProvider.problems
-                    .where((problem) => problem['status'] == _filterStatus)
-                    .toList();
-
-            return RefreshIndicator(
-              onRefresh: _onRefresh,
-              color: colors.primary,
-              backgroundColor: colors.surface,
-              strokeWidth: 2.5,
-              displacement: 40.0,
-              child: CustomScrollView(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  // Status filter chips
-                  SliverToBoxAdapter(
-                    child: _buildFilterChips(colors),
-                  ),
-
-                  // Problem count
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                      child: Text(
-                        '${filteredProblems.length} problème${filteredProblems.length > 1 ? 's' : ''}',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: colors.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Problem list
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final problem = filteredProblems[index];
-                        return _buildProblemCard(problem, colors, index);
-                      },
-                      childCount: filteredProblems.length,
-                    ),
-                  ),
-
-                  // Bottom padding
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 80),
-                  ),
-                ],
-              ),
-            );
-          }
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.pushNamed(context, '/report_problem');
-        },
-        icon: const Icon(Icons.add),
-        label: Text(
-          'Signaler',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterChips(ColorScheme colors) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          _buildFilterChip('ALL', 'Tous', colors),
-          const SizedBox(width: 8),
-          _buildFilterChip('PENDING', 'En attente', colors),
-          const SizedBox(width: 8),
-          _buildFilterChip('IN_PROGRESS', 'En cours', colors),
-          const SizedBox(width: 8),
-          _buildFilterChip('DELEGATED', 'Délégué', colors),
-          const SizedBox(width: 8),
-          _buildFilterChip('REVIEWING', 'En examen', colors),
-          const SizedBox(width: 8),
-          _buildFilterChip('RESOLVED', 'Résolu', colors),
-          const SizedBox(width: 8),
-          _buildFilterChip('REJECTED', 'Rejeté', colors),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String value, String label, ColorScheme colors) {
-    final isSelected = _filterStatus == value;
-
-    return FilterChip(
-      selected: isSelected,
-      label: Text(
-        label,
-        style: GoogleFonts.inter(
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          color: isSelected ? colors.onPrimary : colors.onSurface,
-        ),
-      ),
-      backgroundColor: colors.surface,
-      selectedColor: colors.primary,
-      checkmarkColor: colors.onPrimary,
-      elevation: 1,
-      pressElevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: isSelected ? colors.primary : colors.outline.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      onSelected: (selected) {
-        setState(() {
-          _filterStatus = value;
-        });
-      },
-    );
-  }
-
-  Widget _buildProblemCard(
-      Map<String, dynamic> problem, ColorScheme colors, int index) {
-    final statusColors = {
-      'PENDING': colors.secondary,
-      'IN_PROGRESS': Colors.blue,
-      'RESOLVED': Colors.green,
-      'REJECTED': Colors.red,
-    };
-
-    final statusLabels = {
-      'PENDING': 'En attente',
-      'IN_PROGRESS': 'En cours',
-      'RESOLVED': 'Résolu',
-      'REJECTED': 'Rejeté',
-    };
-
-    final statusColor = statusColors[problem['status']] ?? colors.primary;
-    final statusLabel = statusLabels[problem['status']] ?? 'Inconnu';
-
-    // Format date
-    String formattedDate = '';
-    try {
-      final date = DateTime.parse(problem['created_at']);
-      formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(date);
-    } catch (e) {
-      formattedDate = 'Date inconnue';
-    }
-
-    return Card(
-      margin: EdgeInsets.fromLTRB(16, index == 0 ? 0 : 8, 16, 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  ProblemDetailScreen(problemId: problem['id']),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Status chip and date
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Chip(
-                    label: Text(
-                      statusLabel,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
-                      ),
-                    ),
-                    backgroundColor: statusColor,
-                    padding: EdgeInsets.zero,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  Text(
-                    formattedDate,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: colors.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Category
-              if (problem['category'] != null)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: colors.primaryContainer.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    problem['category']['name'] ?? 'Catégorie inconnue',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: colors.primary,
-                    ),
-                  ),
-                ),
-
-              const SizedBox(height: 12),
-
-              // Description
-              Text(
-                problem['description'] ?? 'Pas de description',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              const SizedBox(height: 8),
-
-              // Location
-              if (problem['municipality'] != null)
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: colors.onSurface.withOpacity(0.6),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        problem['municipality']['name'] ?? 'Lieu inconnu',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: colors.onSurface.withOpacity(0.6),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-
-              // Show image thumbnail if available
-              if (problem['image'] != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      problem['image'],
-                      height: 120,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          height: 120,
-                          width: double.infinity,
-                          color: colors.surfaceVariant,
-                          child: Center(
-                            child: Icon(
-                              Icons.image_not_supported,
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    ).animate().fadeIn(duration: 300.ms, delay: (50 * index).ms).slideY(
-        begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuad);
-  }
-
-  void _showFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            'Filtrer par statut',
-            style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildFilterOption('ALL', 'Tous les problèmes'),
-              _buildFilterOption('PENDING', 'En attente'),
-              _buildFilterOption('IN_PROGRESS', 'En cours'),
-              _buildFilterOption('RESOLVED', 'Résolu'),
-              _buildFilterOption('REJECTED', 'Rejeté'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Fermer'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildFilterOption(String value, String label) {
-    return RadioListTile<String>(
-      title: Text(label),
-      value: value,
-      groupValue: _filterStatus,
-      onChanged: (newValue) {
-        setState(() {
-          _filterStatus = newValue!;
-        });
-        Navigator.pop(context);
-      },
-    );
-  }
-
-  Widget _buildLoadingState(ColorScheme colors) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: colors.primary),
-          const SizedBox(height: 16),
-          Text(
-            'Chargement des problèmes...',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              color: colors.onBackground.withOpacity(0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(String errorMessage, ColorScheme colors) {
-    return RefreshIndicator(
-      onRefresh: _onRefresh,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Container(
-          height: MediaQuery.of(context).size.height - 200,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 60,
-                    color: colors.error,
-                  ),
+                  CircularProgressIndicator(color: colors.primary),
                   const SizedBox(height: 16),
                   Text(
-                    'Erreur de chargement',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: colors.onBackground,
-                    ),
+                    localizations?.loadingProblems ??
+                        'Chargement des problèmes...',
+                    style: GoogleFonts.inter(color: colors.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn();
+          } else if (problemProvider.errorMessage.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, color: colors.error, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    localizations?.loadingError ?? 'Erreur de chargement',
+                    style: GoogleFonts.inter(color: colors.error, fontSize: 18),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    errorMessage,
+                    problemProvider.errorMessage,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: colors.onBackground.withOpacity(0.7),
-                    ),
+                    style: GoogleFonts.inter(color: colors.onSurfaceVariant),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: _onRefresh,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Réessayer'),
+                    label: Text(localizations?.retry ?? 'Réessayer'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors.primary,
+                      foregroundColor: colors.onPrimary,
+                    ),
                   ),
                 ],
               ),
-            ),
-          ),
-        ),
+            ).animate().fadeIn();
+          } else if (problemProvider.problems.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox_outlined,
+                      color: colors.onSurfaceVariant, size: 64),
+                  const SizedBox(height: 24),
+                  Text(
+                    localizations?.noProblemsFound ?? 'Aucun problème trouvé',
+                    style: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: colors.onSurface),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: Text(
+                      localizations?.noProblemsFoundMessage ??
+                          'Vous n\'avez signalé aucun problème pour le moment.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                          fontSize: 15,
+                          color: colors.onSurfaceVariant,
+                          height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn();
+          } else {
+            final filteredProblems = problemProvider.problems.where((problem) {
+              if (_filterStatus == 'ALL') {
+                return true;
+              } else {
+                return problem['status'] == _filterStatus;
+              }
+            }).toList();
+
+            if (filteredProblems.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.filter_alt_off,
+                        color: colors.onSurfaceVariant, size: 64),
+                    const SizedBox(height: 24),
+                    Text(
+                      localizations?.noProblemsFound ?? 'Aucun problème trouvé',
+                      style: GoogleFonts.inter(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: colors.onSurface),
+                    ),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                      child: Text(
+                        localizations?.noProblemsFoundMessage ??
+                            'Vous n\'avez signalé aucun problème pour le moment.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                            fontSize: 15,
+                            color: colors.onSurfaceVariant,
+                            height: 1.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ).animate().fadeIn();
+            }
+
+            return RefreshIndicator(
+              onRefresh: _onRefresh,
+              color: colors.primary,
+              backgroundColor: colors.surfaceVariant,
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16.0),
+                itemCount: filteredProblems.length,
+                itemBuilder: (context, index) {
+                  final problem = filteredProblems[index];
+                  return ProblemCard(
+                    problem: problem,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ProblemDetailScreen(problemId: problem['id']),
+                        ),
+                      );
+                    },
+                  )
+                      .animate()
+                      .fadeIn(delay: (50 * index).ms, duration: 300.ms)
+                      .slideY(begin: 0.1, end: 0);
+                },
+              ),
+            );
+          }
+        },
       ),
     );
   }
 
-  Widget _buildEmptyState(ColorScheme colors) {
-    return RefreshIndicator(
-      onRefresh: _onRefresh,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Container(
-          height: MediaQuery.of(context).size.height - 200,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.search_off,
-                    size: 60,
-                    color: colors.onBackground.withOpacity(0.4),
+  void _showFilterBottomSheet(
+      BuildContext context, AppLocalizations? localizations) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        final colors = Theme.of(context).colorScheme;
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                localizations?.filterByStatus ?? 'Filtrer par statut',
+                style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurface),
+              ),
+              const SizedBox(height: 20),
+              _buildFilterOption(
+                context,
+                localizations?.all ?? 'Tous',
+                'ALL',
+                colors,
+              ),
+              _buildFilterOption(
+                context,
+                localizations?.pending ?? 'En attente',
+                'PENDING',
+                colors,
+              ),
+              _buildFilterOption(
+                context,
+                localizations?.inProgress ?? 'En cours',
+                'IN_PROGRESS',
+                colors,
+              ),
+              _buildFilterOption(
+                context,
+                localizations?.resolved ?? 'Résolu',
+                'RESOLVED',
+                colors,
+              ),
+              _buildFilterOption(
+                context,
+                localizations?.rejected ?? 'Rejeté',
+                'REJECTED',
+                colors,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.primary,
+                    foregroundColor: colors.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
-                  const SizedBox(height: 16),
+                  child: Text(localizations?.close ?? 'Fermer'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterOption(
+      BuildContext context, String title, String status, ColorScheme colors) {
+    return RadioListTile<String>(
+      title: Text(title, style: GoogleFonts.inter(color: colors.onSurface)),
+      value: status,
+      groupValue: _filterStatus,
+      onChanged: (String? newValue) {
+        if (newValue != null) {
+          setState(() {
+            _filterStatus = newValue;
+          });
+          Provider.of<ProblemProvider>(context, listen: false).fetchProblems();
+          Navigator.pop(context); // Close bottom sheet after selection
+        }
+      },
+      activeColor: colors.primary,
+      contentPadding: EdgeInsets.zero,
+    );
+  }
+}
+
+class ProblemCard extends StatelessWidget {
+  final Map<String, dynamic> problem;
+  final VoidCallback onTap;
+
+  const ProblemCard({
+    Key? key,
+    required this.problem,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context);
+
+    // Format date
+    String formattedDate = localizations?.unknownDate ?? 'Date inconnue';
+    try {
+      final date = DateTime.parse(problem['created_at']);
+      formattedDate = DateFormat('dd MMMM yyyy, HH:mm', 'fr_FR').format(date);
+    } catch (e) {
+      print("Error parsing date: $e");
+    }
+
+    // Status display
+    String statusText = localizations?.unknownStatus ?? 'Inconnu';
+    Color statusColor = colors.onSurfaceVariant;
+    IconData statusIcon = Icons.help_outline;
+
+    switch (problem['status']) {
+      case 'PENDING':
+        statusText = localizations?.statusPending ?? 'En attente';
+        statusColor = Colors.orange.shade700;
+        statusIcon = Icons.hourglass_empty_rounded;
+        break;
+      case 'IN_PROGRESS':
+        statusText = localizations?.statusInProgress ?? 'En cours';
+        statusColor = Colors.blue.shade600;
+        statusIcon = Icons.sync_rounded;
+        break;
+      case 'RESOLVED':
+        statusText = localizations?.statusResolved ?? 'Résolu';
+        statusColor = Colors.green.shade700;
+        statusIcon = Icons.check_circle_outline_rounded;
+        break;
+      case 'REJECTED':
+        statusText = localizations?.statusRejected ?? 'Rejeté';
+        statusColor = colors.error;
+        statusIcon = Icons.cancel_outlined;
+        break;
+      default:
+        statusText = localizations?.unknownStatus ?? 'Inconnu';
+        statusColor = colors.onSurfaceVariant;
+        statusIcon = Icons.help_outline_rounded;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (problem['photo_url'] != null && problem['photo_url'].isNotEmpty)
+              Container(
+                height: 180,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: colors.surfaceVariant,
+                  image: DecorationImage(
+                    image: NetworkImage(problem['photo_url']),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Chip(
+                      avatar:
+                          Icon(statusIcon, size: 18, color: colors.onPrimary),
+                      label: Text(statusText,
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w600,
+                              color: colors.onPrimary)),
+                      backgroundColor: statusColor,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      labelPadding: const EdgeInsets.only(left: 4),
+                      visualDensity: VisualDensity.compact,
+                      elevation: 2,
+                      shadowColor: statusColor.withOpacity(0.5),
+                    ),
+                  ),
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(16),
+                width: double.infinity,
+                color: colors.surfaceVariant,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Chip(
+                    avatar: Icon(statusIcon, size: 18, color: colors.onPrimary),
+                    label: Text(statusText,
+                        style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600,
+                            color: colors.onPrimary)),
+                    backgroundColor: statusColor,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    labelPadding: const EdgeInsets.only(left: 4),
+                    visualDensity: VisualDensity.compact,
+                    elevation: 2,
+                    shadowColor: statusColor.withOpacity(0.5),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'Aucun problème signalé',
+                    problem['category']?['name'] ??
+                        (localizations?.unknownCategory ??
+                            'Catégorie inconnue'),
                     style: GoogleFonts.inter(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: colors.onBackground,
+                      color: colors.primary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Vous n\'avez pas encore signalé de problème. Utilisez le bouton ci-dessous pour signaler un nouveau problème.',
-                    textAlign: TextAlign.center,
+                    problem['description'] ??
+                        (localizations?.noDescription ?? 'Pas de description'),
                     style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: colors.onBackground.withOpacity(0.7),
-                    ),
+                        fontSize: 14, color: colors.onSurfaceVariant),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/report_problem');
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Signaler un problème'),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_outlined,
+                          size: 18, color: colors.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          problem['municipality']?['name'] ??
+                              (localizations?.unknownLocation ??
+                                  'Lieu inconnu'),
+                          style: GoogleFonts.inter(
+                              fontSize: 13, color: colors.onSurfaceVariant),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(Icons.calendar_today_outlined,
+                          size: 16, color: colors.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text(
+                        formattedDate,
+                        style: GoogleFonts.inter(
+                            fontSize: 13, color: colors.onSurfaceVariant),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

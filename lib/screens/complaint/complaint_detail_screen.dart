@@ -9,6 +9,7 @@ import 'package:video_player/video_player.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path/path.dart' as p;
+import 'package:citoyen_app/l10n/app_localizations.dart';
 
 class ComplaintDetailScreen extends StatefulWidget {
   final String complaintId;
@@ -65,6 +66,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
   }
 
   Future<void> _initializeVideoPlayer(String? videoUrl) async {
+    final localizations = AppLocalizations.of(context);
     if (videoUrl == null || videoUrl.isEmpty) return;
     if (!mounted) return;
     setState(() => _isVideoLoading = true);
@@ -76,12 +78,16 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
       print("Error initializing video player: $e");
       if (mounted) {
         setState(() => _isVideoLoading = false);
-        _showSnackBar("Erreur chargement vidéo", isError: true);
+        _showSnackBar(
+            localizations?.videoLoadingErrorMessage ??
+                "Erreur chargement vidéo",
+            isError: true);
       }
     }
   }
 
   Future<void> _initializeAudioPlayer(String? audioUrl) async {
+    final localizations = AppLocalizations.of(context);
     if (audioUrl == null || audioUrl.isEmpty) return;
     if (!mounted) return;
     setState(() => _isAudioLoading = true);
@@ -106,7 +112,10 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
       print("Error initializing audio player: $e");
       if (mounted) {
         setState(() => _isAudioLoading = false);
-        _showSnackBar("Erreur chargement audio", isError: true);
+        _showSnackBar(
+            localizations?.audioLoadingErrorMessage ??
+                "Erreur chargement audio",
+            isError: true);
       }
     }
   }
@@ -138,13 +147,17 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
   }
 
   Future<void> _launchUrl(String? urlString) async {
+    final localizations = AppLocalizations.of(context);
     if (urlString == null || urlString.isEmpty) {
-      _showSnackBar("Lien non disponible", isError: true);
+      _showSnackBar(localizations?.linkNotAvailable ?? "Lien non disponible",
+          isError: true);
       return;
     }
     final Uri url = Uri.parse(urlString);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      _showSnackBar("Impossible d'ouvrir le lien", isError: true);
+      _showSnackBar(
+          localizations?.cannotOpenLink ?? "Impossible d'ouvrir le lien",
+          isError: true);
     }
   }
 
@@ -161,6 +174,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
     final ColorScheme colors = theme.colorScheme;
     final EdgeInsets safePadding = MediaQuery.of(context).padding;
     final double screenWidth = MediaQuery.of(context).size.width;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: colors.surface,
@@ -176,7 +190,8 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
             return _buildErrorState(
               complaintProvider.errorMessage.isNotEmpty
                   ? complaintProvider.errorMessage
-                  : 'Réclamation non trouvée',
+                  : localizations?.complaintNotFound ??
+                      'Réclamation non trouvée',
               colors,
             );
           } else {
@@ -191,6 +206,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
   }
 
   Widget _buildLoadingState(ColorScheme colors) {
+    final localizations = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -198,7 +214,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
           CircularProgressIndicator(color: colors.primary, strokeWidth: 3),
           const SizedBox(height: 20),
           Text(
-            'Chargement des détails...',
+            localizations?.loadingDetails ?? 'Chargement des détails...',
             style:
                 GoogleFonts.inter(color: colors.onSurfaceVariant, fontSize: 16),
           )
@@ -208,6 +224,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
   }
 
   Widget _buildErrorState(String message, ColorScheme colors) {
+    final localizations = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(30.0),
@@ -217,7 +234,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
             Icon(Icons.cloud_off_rounded, color: colors.error, size: 60),
             const SizedBox(height: 20),
             Text(
-              'Oups! Erreur',
+              localizations?.errorTitle ?? 'Oups! Erreur',
               style: GoogleFonts.inter(
                   color: colors.error,
                   fontSize: 20,
@@ -234,7 +251,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
             ElevatedButton.icon(
               icon: const Icon(Icons.arrow_back_ios_new_rounded,
                   size: 18, color: Colors.white),
-              label: const Text('Retour'),
+              label: Text(localizations?.backButton ?? 'Retour'),
               onPressed: () => Navigator.of(context).pop(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: colors.errorContainer,
@@ -259,9 +276,10 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
       EdgeInsets safePadding,
       double screenWidth) {
     final ColorScheme colors = theme.colorScheme;
+    final localizations = AppLocalizations.of(context);
 
     // Format dates
-    String formattedCreatedDate = 'Date inconnue';
+    String formattedCreatedDate = localizations?.unknownDate ?? 'Date inconnue';
     try {
       final date = DateTime.parse(complaint['created_at']);
       formattedCreatedDate =
@@ -272,8 +290,9 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
 
     // Status Configuration
     final statusConfig = _getStatusConfig(complaint['status'], colors);
-    final statusLabel =
-        statusConfig['label'] ?? complaint['status_display'] ?? 'Inconnu';
+    final statusLabel = statusConfig['label'] ??
+        complaint['status_display'] ??
+        (localizations?.unknownStatus ?? 'Inconnu');
     final statusColor = statusConfig['color'] ?? colors.onSurfaceVariant;
     final statusIcon = statusConfig['icon'] ?? Icons.help_outline;
 
@@ -325,7 +344,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: Colors.white),
-            tooltip: 'Retour',
+            tooltip: localizations?.goBack ?? 'Retour',
             onPressed: () => Navigator.of(context).pop(),
           ),
           flexibleSpace: FlexibleSpaceBar(
@@ -333,7 +352,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
                 const EdgeInsets.symmetric(horizontal: 50, vertical: 12),
             centerTitle: false,
             title: Text(
-              'Détail de la Réclamation',
+              localizations?.complaintDetailTitle ?? 'Détail de la Réclamation',
               style: GoogleFonts.inter(
                 fontWeight: FontWeight.bold,
                 color: colors.onPrimary,
@@ -384,12 +403,16 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
               const SizedBox(height: 24),
 
               // Subject Section
-              animateItem(
-                  _buildSectionTitle('Sujet', Icons.title_rounded, theme)),
+              animateItem(_buildSectionTitle(
+                  localizations?.subjectTitle ?? 'Sujet',
+                  Icons.title_rounded,
+                  theme)),
               const SizedBox(height: 10),
               animateItem(_buildInfoCard(
                 child: Text(
-                  complaint['subject'] ?? 'Sujet non spécifié',
+                  complaint['subject'] ??
+                      (localizations?.subjectNotSpecified ??
+                          'Sujet non spécifié'),
                   style: GoogleFonts.inter(
                       fontSize: 16,
                       color: colors.onSurface,
@@ -401,11 +424,15 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
 
               // Description Section
               animateItem(_buildSectionTitle(
-                  'Description', Icons.description_outlined, theme)),
+                  localizations?.descriptionTitle ?? 'Description',
+                  Icons.description_outlined,
+                  theme)),
               const SizedBox(height: 10),
               animateItem(_buildInfoCard(
                 child: Text(
-                  complaint['description'] ?? 'Pas de description fournie.',
+                  complaint['description'] ??
+                      (localizations?.noDescriptionProvided ??
+                          'Pas de description fournie.'),
                   style: GoogleFonts.inter(
                       fontSize: 15, color: colors.onSurface, height: 1.5),
                 ),
@@ -415,8 +442,11 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
 
               // Municipality Section
               if (complaint['municipality'] != null) ...[
-                animateItem(_buildSectionTitle('Municipalité Concernée',
-                    Icons.location_city_rounded, theme)),
+                animateItem(_buildSectionTitle(
+                    localizations?.municipalityTitle ??
+                        'Municipalité Concernée',
+                    Icons.location_city_rounded,
+                    theme)),
                 const SizedBox(height: 10),
                 animateItem(_buildInfoCard(
                   child: Row(
@@ -427,7 +457,8 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
                       Expanded(
                         child: Text(
                           complaint['municipality']['name'] ??
-                              'Municipalité inconnue',
+                              (localizations?.unknownMunicipality ??
+                                  'Municipalité inconnue'),
                           style: GoogleFonts.inter(
                               fontSize: 15, color: colors.onSurface),
                         ),
@@ -443,7 +474,8 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
               if (complaint['comment'] != null &&
                   complaint['comment'].toString().isNotEmpty) ...[
                 animateItem(_buildSectionTitle(
-                    'Commentaire de l\'Administration',
+                    localizations?.adminCommentTitle ??
+                        'Commentaire de l\'Administration',
                     Icons.comment_outlined,
                     theme)),
                 const SizedBox(height: 10),
@@ -461,7 +493,9 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
               // Attachments Section
               if (_hasAttachments(complaint)) ...[
                 animateItem(_buildSectionTitle(
-                    'Pièces Jointes', Icons.attach_file_rounded, theme)),
+                    localizations?.attachmentsTitle ?? 'Pièces Jointes',
+                    Icons.attach_file_rounded,
+                    theme)),
                 const SizedBox(height: 16),
 
                 // Video Player
@@ -483,7 +517,10 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
               // Citizen Information
               if (complaint['citizen'] != null) ...[
                 animateItem(_buildSectionTitle(
-                    'Informations du Citoyen', Icons.person_rounded, theme)),
+                    localizations?.citizenInfoTitle ??
+                        'Informations du Citoyen',
+                    Icons.person_rounded,
+                    theme)),
                 const SizedBox(height: 10),
                 animateItem(_buildCitizenInfo(complaint['citizen'], theme)),
               ],
@@ -495,28 +532,29 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
   }
 
   Map<String, dynamic> _getStatusConfig(String status, ColorScheme colors) {
+    final localizations = AppLocalizations.of(context);
     switch (status) {
       case 'PENDING':
         return {
-          'label': 'En attente',
+          'label': localizations?.pendingStatus ?? 'En attente',
           'color': colors.secondary,
           'icon': Icons.schedule_rounded,
         };
       case 'REVIEWING':
         return {
-          'label': 'En examen',
+          'label': localizations?.reviewingStatus ?? 'En examen',
           'color': Colors.blue,
           'icon': Icons.search_rounded,
         };
       case 'RESOLVED':
         return {
-          'label': 'Résolue',
+          'label': localizations?.resolvedStatus ?? 'Résolue',
           'color': Colors.green,
           'icon': Icons.check_circle_rounded,
         };
       case 'REJECTED':
         return {
-          'label': 'Rejetée',
+          'label': localizations?.rejectedStatus ?? 'Rejetée',
           'color': colors.error,
           'icon': Icons.cancel_rounded,
         };
@@ -608,6 +646,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
   }
 
   Widget _buildVideoPlayer(String videoUrl, ThemeData theme) {
+    final localizations = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -624,7 +663,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
                 Icon(Icons.videocam, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
-                  'Vidéo',
+                  localizations?.videoTitle ?? 'Vidéo',
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface,
@@ -681,7 +720,8 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
                   children: [
                     Icon(Icons.error, color: theme.colorScheme.error),
                     const SizedBox(height: 8),
-                    Text('Erreur de chargement vidéo'),
+                    Text(localizations?.videoLoadingError ??
+                        'Erreur de chargement vidéo'),
                   ],
                 ),
               ),
@@ -692,6 +732,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
   }
 
   Widget _buildAudioPlayer(String audioUrl, ThemeData theme) {
+    final localizations = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -711,7 +752,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
               Icon(Icons.mic, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Text(
-                'Enregistrement vocal',
+                localizations?.voiceRecordingTitle ?? 'Enregistrement vocal',
                 style: GoogleFonts.inter(
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.onSurface,
@@ -775,7 +816,8 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
               children: [
                 Icon(Icons.error, color: theme.colorScheme.error),
                 const SizedBox(width: 8),
-                Text('Erreur de chargement audio'),
+                Text(localizations?.audioLoadingError ??
+                    'Erreur de chargement audio'),
               ],
             ),
         ],
@@ -785,6 +827,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
 
   Widget _buildDocumentCard(
       String documentUrl, String? documentName, ThemeData theme) {
+    final localizations = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
@@ -809,7 +852,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Document joint',
+                      localizations?.attachedDocumentTitle ?? 'Document joint',
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSurface,
@@ -839,19 +882,23 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
   }
 
   Widget _buildCitizenInfo(Map<String, dynamic> citizen, ThemeData theme) {
+    final localizations = AppLocalizations.of(context);
     return _buildInfoCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (citizen['full_name'] != null)
-            _buildInfoRow('Nom complet', citizen['full_name'], theme),
+            _buildInfoRow(localizations?.fullNameLabel ?? 'Nom complet',
+                citizen['full_name'], theme),
           if (citizen['nni'] != null)
-            _buildInfoRow('NNI', citizen['nni'], theme),
-          if (citizen['address'] != null)
-            _buildInfoRow('Adresse', citizen['address'], theme),
-          if (citizen['municipality'] != null)
             _buildInfoRow(
-                'Municipalité', citizen['municipality']['name'], theme),
+                localizations?.nniLabel ?? 'NNI', citizen['nni'], theme),
+          if (citizen['address'] != null)
+            _buildInfoRow(localizations?.addressLabel ?? 'Adresse',
+                citizen['address'], theme),
+          if (citizen['municipality'] != null)
+            _buildInfoRow(localizations?.municipalityLabel ?? 'Municipalité',
+                citizen['municipality']['name'], theme),
         ],
       ),
       theme: theme,

@@ -174,7 +174,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get all => 'Tous';
+  String get all => 'Toutes';
 
   @override
   String get pending => 'En attente';
@@ -183,10 +183,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get inProgress => 'En cours';
 
   @override
-  String get resolved => 'Résolu';
+  String get resolved => 'Résolues';
 
   @override
-  String get rejected => 'Rejeté';
+  String get rejected => 'Rejetées';
 
   @override
   String get unknown => 'Inconnu';
@@ -221,4 +221,721 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get noProblemsFoundMessage =>
       'Vous n\"avez signalé aucun problème pour le moment.';
+
+  @override
+  String get quickActions => 'Actions Rapides';
+
+  @override
+  String get myReports => 'Mes Signalements';
+
+  @override
+  String get yourStatistics => 'Vos Statistiques';
+
+  @override
+  String get problemsReported => 'Problèmes Signalés';
+
+  @override
+  String get complaints => 'réclamations';
+
+  @override
+  String get recentActivity => 'Activité Récente';
+
+  @override
+  String get viewAll => 'Tout voir';
+
+  @override
+  String get noRecentActivity => 'Aucune activité récente';
+
+  @override
+  String get noRecentActivityMessage =>
+      'Vos signalements et réclamations apparaîtront ici';
+
+  @override
+  String get newProblemReported => 'Nouveau problème signalé';
+
+  @override
+  String get newComplaintSubmitted => 'Nouvelle réclamation soumise';
+
+  @override
+  String get noSubject => 'Pas de sujet';
+
+  @override
+  String get unknownActivity => 'Activité inconnue';
+
+  @override
+  String get unknownTime => 'Inconnu';
+
+  @override
+  String get longTimeAgo => 'Il y a longtemps';
+
+  @override
+  String get dashboardUpdatedSuccessfully => 'Dashboard mis à jour avec succès';
+
+  @override
+  String get errorUpdatingDashboard => 'Erreur lors de la mise à jour';
+
+  @override
+  String get updating => 'Mise à jour...';
+
+  @override
+  String daysAgo(Object count) {
+    return 'il y a $count jours';
+  }
+
+  @override
+  String hoursAgo(Object count) {
+    return 'il y a $count heures';
+  }
+
+  @override
+  String minutesAgo(Object count) {
+    return 'il y a $count minutes';
+  }
+
+  @override
+  String get justNow => 'À l\"instant';
+
+  @override
+  String get buttonHome => 'Accueil';
+
+  @override
+  String get bnjr => 'Bonjour ,';
+
+  @override
+  String get buttonProb => 'Problèmes';
+
+  @override
+  String get buttonComp => 'Réclamations';
+
+  @override
+  String get buttonProfile => 'Profil';
+
+  @override
+  String get myComplaints => 'Mes Réclamations';
+
+  @override
+  String get filter => 'Filtrer';
+
+  @override
+  String get reviewing => 'En examen';
+
+  @override
+  String get delegated => 'Délégué';
+
+  @override
+  String get complaint => 'réclamation';
+
+  @override
+  String outOfTotal(Object total) {
+    return 'sur $total au total';
+  }
+
+  @override
+  String get pendingStatus => 'En attente';
+
+  @override
+  String get reviewingStatus => 'En examen';
+
+  @override
+  String get resolvedStatus => 'Résolue';
+
+  @override
+  String get rejectedStatus => 'Rejetée';
+
+  @override
+  String get inProgressStatus => 'En cours';
+
+  @override
+  String get delegatedStatus => 'Délégué';
+
+  @override
+  String get unknownStatus => 'Inconnu';
+
+  @override
+  String dayAgo(Object count) {
+    return 'il y a $count jour';
+  }
+
+  @override
+  String hourAgo(Object count) {
+    return 'il y a $count heure';
+  }
+
+  @override
+  String minuteAgo(Object count) {
+    return 'il y a $count minute';
+  }
+
+  @override
+  String get subjectNotSpecified => 'Sujet non spécifié';
+
+  @override
+  String get unknownMunicipality => 'Municipalité inconnue';
+
+  @override
+  String get unknownDate => 'Date inconnue';
+
+  @override
+  String get imageNotAvailable => 'Image non disponible';
+
+  @override
+  String get newComplaint => 'Nouvelle Réclamation';
+
+  @override
+  String get allComplaints => 'Toutes les réclamations';
+
+  @override
+  String get pendingComplaints => 'En attente';
+
+  @override
+  String get inProgressComplaints => 'En cours';
+
+  @override
+  String get delegatedComplaints => 'Délégué';
+
+  @override
+  String get reviewingComplaints => 'En examen';
+
+  @override
+  String get resolvedComplaints => 'Résolues';
+
+  @override
+  String get rejectedComplaints => 'Rejetées';
+
+  @override
+  String get loadingComplaints => 'Chargement des réclamations...';
+
+  @override
+  String get pleaseWait => 'Veuillez patienter';
+
+  @override
+  String get oopsError => 'Oups! Une erreur est survenue';
+
+  @override
+  String get pullToRefresh => 'Tirez vers le bas pour actualiser';
+
+  @override
+  String get noComplaints => 'Aucune réclamation';
+
+  @override
+  String get noComplaintsMessage =>
+      'Vous n\'avez pas encore soumis de réclamation.\nCommencez par créer votre première réclamation.';
+
+  @override
+  String get createComplaint => 'Créer une réclamation';
+
+  @override
+  String get unableToLoadComplaints =>
+      'Impossible de charger les réclamations. Vérifiez votre connexion.';
+
+  @override
+  String get errorDuringRefresh => 'Erreur lors de l\'actualisation';
+
+  @override
+  String get submitComplaintTitle => 'Déposer une Réclamation';
+
+  @override
+  String get welcomeTitle => 'Votre voix compte';
+
+  @override
+  String get welcomeSubtitle => 'Aidez-nous à améliorer nos services ensemble';
+
+  @override
+  String get municipalitySection => 'Municipalité Concernée';
+
+  @override
+  String get municipalityPlaceholder => 'Sélectionnez une municipalité';
+
+  @override
+  String get municipalityValidation => 'Veuillez sélectionner une municipalité';
+
+  @override
+  String get subjectSection => 'Sujet de la Réclamation';
+
+  @override
+  String get subjectPlaceholder => 'Résumez votre réclamation en quelques mots';
+
+  @override
+  String get subjectValidationRequired => 'Le sujet est requis';
+
+  @override
+  String get subjectValidationMinLength =>
+      'Le sujet doit contenir au moins 5 caractères';
+
+  @override
+  String get descriptionSection => 'Description Détaillée';
+
+  @override
+  String get descriptionPlaceholder =>
+      'Décrivez votre réclamation en détail...';
+
+  @override
+  String get descriptionValidationRequired => 'La description est requise';
+
+  @override
+  String get descriptionValidationMinLength =>
+      'La description doit contenir au moins 20 caractères';
+
+  @override
+  String get voiceRecordingSection => 'Message Vocal (Optionnel)';
+
+  @override
+  String get voiceRecordingInstructions =>
+      'Enregistrez un message vocal pour accompagner votre réclamation';
+
+  @override
+  String get voiceRecordingStart => 'Appuyez pour enregistrer';
+
+  @override
+  String get voiceRecordingStop => 'Appuyez sur le bouton pour arrêter';
+
+  @override
+  String get voiceRecordingInProgress => 'Enregistrement...';
+
+  @override
+  String get voiceRecordingStoppingInProgress => 'Arrêt en cours...';
+
+  @override
+  String get voiceRecordingPleaseWait => 'Veuillez patienter...';
+
+  @override
+  String get voiceRecordingReady => 'Enregistrement prêt';
+
+  @override
+  String get voiceRecordingPlayInstructions =>
+      'Appuyez sur lecture pour écouter votre enregistrement';
+
+  @override
+  String get attachmentsSection => 'Pièces Jointes';
+
+  @override
+  String get photoAttachment => 'Photo';
+
+  @override
+  String get photoSelected => 'Photo sélectionnée';
+
+  @override
+  String get photoAdd => 'Ajouter une photo';
+
+  @override
+  String get videoAttachment => 'Vidéo';
+
+  @override
+  String get videoSelected => 'Vidéo sélectionnée';
+
+  @override
+  String get videoAdd => 'Ajouter une vidéo';
+
+  @override
+  String get evidenceAttachment => 'Preuve (Requis)';
+
+  @override
+  String get evidenceAdd => 'Ajouter un document';
+
+  @override
+  String get submitButton => 'Soumettre la Réclamation';
+
+  @override
+  String get submitButtonProgress => 'Soumission en cours...';
+
+  @override
+  String get submitSuccess => 'Réclamation soumise avec succès!';
+
+  @override
+  String get submitError => 'Échec de la soumission de la réclamation.';
+
+  @override
+  String get submitUnexpectedError => 'Une erreur inattendue est survenue:';
+
+  @override
+  String get evidenceRequired =>
+      'Veuillez joindre une preuve (document requis).';
+
+  @override
+  String get recordingErrorStart =>
+      'Erreur lors du démarrage de l\'enregistrement:';
+
+  @override
+  String get recordingErrorStop =>
+      'Erreur lors de l\'arrêt de l\'enregistrement:';
+
+  @override
+  String get recordingPermissionDenied =>
+      'Permission d\'enregistrement audio refusée';
+
+  @override
+  String get playbackError => 'Erreur lors de la lecture:';
+
+  @override
+  String get noRecordingAvailable => 'Aucun enregistrement vocal disponible.';
+
+  @override
+  String get tevraghZeina => 'Tevragh-Zeina';
+
+  @override
+  String get ksar => 'Ksar';
+
+  @override
+  String get teyarett => 'Teyarett';
+
+  @override
+  String get toujounine => 'Toujounine';
+
+  @override
+  String get sebkha => 'Sebkha';
+
+  @override
+  String get elMina => 'El Mina';
+
+  @override
+  String get araffat => 'Araffat';
+
+  @override
+  String get riyadh => 'Riyadh';
+
+  @override
+  String get darNaim => 'Dar Naim';
+
+  @override
+  String get complaintDetailTitle => 'Détail de la Réclamation';
+
+  @override
+  String get loadingDetails => 'Chargement des détails...';
+
+  @override
+  String get errorTitle => 'Oups! Erreur';
+
+  @override
+  String get backButton => 'Retour';
+
+  @override
+  String get goBack => 'Retour';
+
+  @override
+  String get subjectTitle => 'Sujet';
+
+  @override
+  String get descriptionTitle => 'Description';
+
+  @override
+  String get noDescriptionProvided => 'Pas de description fournie.';
+
+  @override
+  String get municipalityTitle => 'Municipalité Concernée';
+
+  @override
+  String get adminCommentTitle => 'Commentaire Admin';
+
+  @override
+  String get attachmentsTitle => 'Pièces Jointes';
+
+  @override
+  String get citizenInfoTitle => 'Informations du Citoyen';
+
+  @override
+  String get videoTitle => 'Vidéo à l\'appui';
+
+  @override
+  String get videoLoadingError => 'Erreur chargement vidéo';
+
+  @override
+  String get voiceRecordingTitle => 'Enregistrement vocal';
+
+  @override
+  String get audioLoadingError => 'Erreur chargement audio';
+
+  @override
+  String get attachedDocumentTitle => 'Document joint';
+
+  @override
+  String get fullNameLabel => 'Nom complet';
+
+  @override
+  String get nniLabel => 'NNI';
+
+  @override
+  String get addressLabel => 'Adresse';
+
+  @override
+  String get municipalityLabel => 'Municipalité';
+
+  @override
+  String get linkNotAvailable => 'Lien non disponible';
+
+  @override
+  String get cannotOpenLink => 'Impossible d\'ouvrir le lien';
+
+  @override
+  String get videoLoadingErrorMessage => 'Erreur chargement vidéo';
+
+  @override
+  String get audioLoadingErrorMessage => 'Erreur chargement audio';
+
+  @override
+  String get complaintNotFound => 'Réclamation non trouvée';
+
+  @override
+  String get categorySelectionTitle => 'Choisir une catégorie';
+
+  @override
+  String get reportCategory => 'Signaler: ';
+
+  @override
+  String get detailsFor => 'Détails pour ';
+
+  @override
+  String get categoryRoads => 'Routes';
+
+  @override
+  String get categoryWater => 'Eau';
+
+  @override
+  String get categoryElectricity => 'Électricité';
+
+  @override
+  String get categoryWaste => 'Déchets';
+
+  @override
+  String get categoryBuildingPermit => 'Permis de construire ou de démolir';
+
+  @override
+  String get categoryOther => 'Autre';
+
+  @override
+  String get imageNotSupported => 'Image non supportée';
+
+  @override
+  String get errorOops => 'Oups! Erreur';
+
+  @override
+  String get problemDetailTitle => 'Détail du Problème';
+
+  @override
+  String get statusPending => 'En attente';
+
+  @override
+  String get statusInProgress => 'En cours';
+
+  @override
+  String get statusResolved => 'Résolu';
+
+  @override
+  String get statusRejected => 'Rejeté';
+
+  @override
+  String get voiceNoteTitle => 'Note Vocale';
+
+  @override
+  String get locationTitle => 'Emplacement';
+
+  @override
+  String get coordinatesNotAvailable => 'Coordonnées non disponibles.';
+
+  @override
+  String get documentTitle => 'Document';
+
+  @override
+  String get videoNotAvailable => 'Vidéo non disponible ou erreur';
+
+  @override
+  String get audioNotAvailable => 'Audio non disponible ou erreur';
+
+  @override
+  String get pauseTooltip => 'Pause';
+
+  @override
+  String get playTooltip => 'Lecture';
+
+  @override
+  String get expandMapTooltip => 'Agrandir la carte';
+
+  @override
+  String get collapseMapTooltip => 'Réduire la carte';
+
+  @override
+  String get problemNotFound => 'Problème non trouvé';
+
+  @override
+  String get reportProblemTitle => 'Signaler un Problème';
+
+  @override
+  String get locationServicesDisabled =>
+      'Les services de localisation sont désactivés';
+
+  @override
+  String get locationServicesDisabledMessage =>
+      'Veuillez activer les services de localisation dans les paramètres de votre appareil.';
+
+  @override
+  String get locationPermissionDenied => 'Permission de localisation refusée';
+
+  @override
+  String get locationPermissionDeniedForever =>
+      'Permission de localisation définitivement refusée';
+
+  @override
+  String get permissionRequired => 'Permission requise';
+
+  @override
+  String get permissionRequiredMessage =>
+      'Cette application nécessite la permission de localisation pour fonctionner. Veuillez l\'activer dans les paramètres.';
+
+  @override
+  String get locationError =>
+      'Erreur de localisation: Impossible d\'obtenir la position.';
+
+  @override
+  String get positionNotAvailable => 'Position non disponible.';
+
+  @override
+  String get searchingMunicipality => 'Recherche municipalité...';
+
+  @override
+  String get municipalityNotFound => 'non trouvée.';
+
+  @override
+  String get cannotExtractMunicipality =>
+      'Impossible d\'extraire le nom de la municipalité.';
+
+  @override
+  String get errorDeterminingMunicipality =>
+      'Erreur détermination municipalité.';
+
+  @override
+  String get problemDescriptionTitle => 'Description du problème*';
+
+  @override
+  String get problemDescriptionHint => 'Décrivez le problème en détail...';
+
+  @override
+  String get pleaseProvideDescription => 'Veuillez fournir une description';
+
+  @override
+  String get minimum10Characters => 'Minimum 10 caractères';
+
+  @override
+  String get stopRecording => 'Arrêter';
+
+  @override
+  String get voiceNote => 'Note Vocale';
+
+  @override
+  String get microphonePermissionDenied => 'Permission microphone refusée';
+
+  @override
+  String get audioRecorderNotInitialized => 'Enregistreur audio non initialisé';
+
+  @override
+  String get recordingFinished => 'Enregistrement terminé:';
+
+  @override
+  String get errorStopping => 'Erreur lors de l\'arrêt:';
+
+  @override
+  String get recordingInProgress => 'Enregistrement en cours...';
+
+  @override
+  String get errorStarting => 'Erreur lors du démarrage:';
+
+  @override
+  String get problemLocationTitle => 'Emplacement du problème*';
+
+  @override
+  String get problemLocationSubtitle => 'Vous devez choisir un emplacement';
+
+  @override
+  String get loadingMap => 'Chargement de la carte...';
+
+  @override
+  String get centeredOnYourPosition => 'Centré sur votre position';
+
+  @override
+  String get documentsTitle => 'Documents à l\'appui';
+
+  @override
+  String get documentsSubtitle => 'Vous pouvez joindre jusqu\'à 3 documents';
+
+  @override
+  String get chooseDocuments => 'Choisir des documents';
+
+  @override
+  String get imagesTitle => 'Images à l\'appui';
+
+  @override
+  String get imagesSubtitle => 'Vous pouvez joindre jusqu\'à 3 images';
+
+  @override
+  String get camera => 'Caméra';
+
+  @override
+  String get gallery => 'Galerie';
+
+  @override
+  String get videoSubtitle => 'Vous pouvez joindre une seule vidéo';
+
+  @override
+  String get record => 'Enregistrer';
+
+  @override
+  String get videoLibrary => 'Galerie';
+
+  @override
+  String get cameraPermissionDenied => 'Permission caméra refusée';
+
+  @override
+  String get send => 'ENVOYER';
+
+  @override
+  String get pleaseFillRequiredFields =>
+      'Veuillez remplir les champs obligatoires.';
+
+  @override
+  String get pleaseSelectProblemLocation =>
+      'Veuillez sélectionner la position du problème.';
+
+  @override
+  String get pleaseWaitMunicipality => 'Veuillez patienter (municipalité)...';
+
+  @override
+  String get municipalityNotDetermined =>
+      'Municipalité non déterminée. Soumission impossible.';
+
+  @override
+  String get authTokenMissing => 'Erreur: Token d\'authentification manquant.';
+
+  @override
+  String get problemReportedSuccess => 'Problème signalé avec succès!';
+
+  @override
+  String get submissionFailed => 'Échec:';
+
+  @override
+  String get networkSystemError => 'Erreur réseau/système:';
+
+  @override
+  String get maxImagesReached => 'Vous ne pouvez joindre que 3 images maximum.';
+
+  @override
+  String get imageSelectionError => 'Erreur sélection d\'image:';
+
+  @override
+  String get videoSelectionError => 'Erreur sélection/enregistrement vidéo:';
+
+  @override
+  String get documentSelectionError => 'Erreur sélection de document:';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get cancel => 'Annuler';
+
+  @override
+  String get settings => 'Paramètres';
+
+  @override
+  String get lat => 'Lat';
+
+  @override
+  String get lon => 'Lon';
 }
