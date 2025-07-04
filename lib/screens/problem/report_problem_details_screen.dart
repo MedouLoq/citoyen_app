@@ -1,6 +1,7 @@
 // lib/screens/report_problem_details_screen.dart
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,7 +14,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:flutter_sound/flutter_sound.dart';
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart' show kIsWeb; // To check platform
 import 'package:shared_preferences/shared_preferences.dart'; // For web storage
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // For native storage
@@ -59,10 +61,14 @@ class ReportProblemDetailsScreen extends StatefulWidget {
       _ReportProblemDetailsScreenState();
 }
 
-class _ReportProblemDetailsScreenState
-    extends State<ReportProblemDetailsScreen> {
+class _ReportProblemDetailsScreenState extends State<ReportProblemDetailsScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _descriptionController = TextEditingController();
+
+  // Animation controllers
+  late AnimationController _recordingPulseController;
+  late Animation<double> _pulseAnimation;
 
   // Attachments
   List<XFile> _photoFiles = [];
@@ -77,13 +83,17 @@ class _ReportProblemDetailsScreenState
   bool _isLoadingLocation = true;
   List<Marker> _markers = [];
 
-  // Audio recording
-  FlutterSoundRecorder? _audioRecorder;
+  // Audio recording - Updated to match complaint screen
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isRecording = false;
-  bool _isRecorderInitialized = false;
-  String _recordingPath = '';
+  bool _isPlaying = false;
+  bool _isStoppingRecording = false;
+  String? _audioPath;
   Duration _recordingDuration = Duration.zero;
-  Stream<RecordingDisposition>? _recordingStream;
+  Duration _playbackPosition = Duration.zero;
+  Duration _totalDuration = Duration.zero;
+  Timer? _recordingTimer;
 
   // Submission and Error State
   bool _isSubmitting = false;
@@ -95,13 +105,6 @@ class _ReportProblemDetailsScreenState
   String? _municipalityCandidateName;
   // --- End State Variables ---
 
-  // Theme Colors - Reverted to use Theme context
-  // Color _primaryColor; // Will be derived from Theme
-  // Color _lightBackground; // Will be derived from Theme
-  // Color _borderColor; // Will be derived from Theme
-  // Color _iconColor; // Will be derived from Theme
-  // Color _secondaryTextColor; // Will be derived from Theme
-
   @override
   void initState() {
     super.initState();
@@ -112,10 +115,206 @@ class _ReportProblemDetailsScreenState
 
   @override
   void dispose() {
+    _recordingTimer?.cancel();
     _descriptionController.dispose();
-    _audioRecorder?.closeRecorder();
+    _recordingPulseController.dispose();
+    _audioRecorder.dispose();
+    _audioPlayer.dispose();
     _mapController?.dispose();
     super.dispose();
+  }
+
+  Future<void> _initializeAudioRecorder() async {
+    _recordingPulseController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.1,
+    ).animate(CurvedAnimation(
+      parent: _recordingPulseController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Setup audio player listeners
+    _audioPlayer.onPositionChanged.listen((position) {
+      if (mounted) {
+        setState(() {
+          _playbackPosition = position;
+        });
+      }
+    });
+
+    _audioPlayer.onDurationChanged.listen((duration) {
+      if (mounted) {
+        setState(() {
+          _totalDuration = duration;
+        });
+      }
+    });
+
+    _audioPlayer.onPlayerComplete.listen((event) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _playbackPosition = Duration.zero;
+        });
+      }
+    });
+  }
+
+  Future<void> _recordVoice() async {
+    final localizations = AppLocalizations.of(context);
+    if (_isRecording || _isStoppingRecording) {
+      // Stop recording
+      if (_isRecording && !_isStoppingRecording) {
+        setState(() {
+          _isStoppingRecording = true;
+        });
+
+        try {
+          _recordingTimer?.cancel();
+          _recordingPulseController.stop();
+          _recordingPulseController.reset();
+
+          final path = await _audioRecorder.stop();
+
+          setState(() {
+            _isRecording = false;
+            _isStoppingRecording = false;
+            if (path != null && path.isNotEmpty) {
+              _audioPath = path;
+              _voiceRecordFile = File(path);
+              print('Recording saved to: $path'); // Debug log
+            }
+          });
+        } catch (e) {
+          _showSnackBar(
+              '${localizations?.recordingErrorStop ?? 'Erreur lors de l\'arrêt de l\'enregistrement:'} $e');
+          setState(() {
+            _isRecording = false;
+            _isStoppingRecording = false;
+          });
+        }
+      }
+    } else {
+      // Start recording
+      if (await _audioRecorder.hasPermission()) {
+        try {
+          final directory = await getApplicationDocumentsDirectory();
+          final path = p.join(directory.path,
+              'voice_${DateTime.now().millisecondsSinceEpoch}.m4a');
+
+          await _audioRecorder.start(
+            const RecordConfig(
+              encoder: AudioEncoder.aacLc,
+              bitRate: 128000,
+              sampleRate: 44100,
+            ),
+            path: path,
+          );
+
+          setState(() {
+            _isRecording = true;
+            _isStoppingRecording = false;
+            _recordingDuration = Duration.zero;
+          });
+
+          _recordingPulseController.repeat(reverse: true);
+          _startRecordingTimer();
+        } catch (e) {
+          _showSnackBar(
+              '${localizations?.recordingErrorStart ?? 'Erreur lors du démarrage de l\'enregistrement:'} $e');
+        }
+      } else {
+        _showSnackBar(localizations?.recordingPermissionDenied ??
+            'Permission d\'enregistrement audio refusée');
+      }
+    }
+  }
+
+  void _startRecordingTimer() {
+    _recordingTimer?.cancel();
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_isRecording && mounted) {
+        setState(() {
+          _recordingDuration =
+              Duration(seconds: _recordingDuration.inSeconds + 1);
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _playRecordedVoice() async {
+    final localizations = AppLocalizations.of(context);
+    if (_isPlaying) {
+      await _audioPlayer.pause();
+      setState(() {
+        _isPlaying = false;
+      });
+    } else {
+      if (_audioPath != null && File(_audioPath!).existsSync()) {
+        try {
+          await _audioPlayer.play(DeviceFileSource(_audioPath!));
+          setState(() {
+            _isPlaying = true;
+          });
+        } catch (e) {
+          _showSnackBar(
+              '${localizations?.playbackError ?? 'Erreur lors de la lecture:'} $e');
+        }
+      } else {
+        _showSnackBar(localizations?.noRecordingAvailable ??
+            'Aucun enregistrement vocal disponible.');
+      }
+    }
+  }
+
+  Future<void> _deleteRecording() async {
+    // Stop playback if playing
+    if (_isPlaying) {
+      await _audioPlayer.stop();
+    }
+
+    // Stop recording if recording
+    if (_isRecording) {
+      _recordingTimer?.cancel();
+      _recordingPulseController.stop();
+      _recordingPulseController.reset();
+      try {
+        await _audioRecorder.stop();
+      } catch (e) {
+        print('Error stopping recorder: $e');
+      }
+    }
+
+    // Delete file if exists
+    if (_audioPath != null) {
+      try {
+        final file = File(_audioPath!);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e) {
+        print('Error deleting recording: $e');
+      }
+    }
+
+    // Reset all recording-related state completely
+    setState(() {
+      _audioPath = null;
+      _voiceRecordFile = null;
+      _isPlaying = false;
+      _isRecording = false;
+      _isStoppingRecording = false;
+      _recordingDuration = Duration.zero;
+      _playbackPosition = Duration.zero;
+      _totalDuration = Duration.zero;
+    });
   }
 
   Future<void> _requestLocationPermission() async {
@@ -552,29 +751,6 @@ class _ReportProblemDetailsScreenState
     });
   }
 
-  Future<void> _initializeAudioRecorder() async {
-    final localizations = AppLocalizations.of(context);
-    try {
-      _audioRecorder = FlutterSoundRecorder();
-      final microphoneStatus = await Permission.microphone.request();
-      if (!microphoneStatus.isGranted) {
-        print("Microphone permission denied");
-        if (mounted)
-          _showSnackBar(localizations?.microphonePermissionDenied ??
-              "Permission microphone refusée");
-        setState(() => _isRecorderInitialized = false);
-        return;
-      }
-      await _audioRecorder!.openRecorder();
-      _audioRecorder!
-          .setSubscriptionDuration(const Duration(milliseconds: 100));
-      if (mounted) setState(() => _isRecorderInitialized = true);
-    } catch (e) {
-      print("Error initializing audio recorder: $e");
-      if (mounted) setState(() => _isRecorderInitialized = false);
-    }
-  }
-
   Future<void> _pickImage(ImageSource source) async {
     final localizations = AppLocalizations.of(context);
     try {
@@ -640,87 +816,6 @@ class _ReportProblemDetailsScreenState
     }
   }
   // --- End Updated Video Picking ---
-
-  Future<void> _toggleAudioRecording() async {
-    final localizations = AppLocalizations.of(context);
-    if (!_isRecorderInitialized || _audioRecorder == null) {
-      if (mounted)
-        _showSnackBar(localizations?.audioRecorderNotInitialized ??
-            "Enregistreur audio non initialisé");
-      return;
-    }
-
-    if (_isRecording) {
-      try {
-        final path = await _audioRecorder!.stopRecorder();
-        if (path != null && mounted) {
-          setState(() {
-            _voiceRecordFile = File(path);
-            _isRecording = false;
-            _recordingStream = null;
-            _recordingDuration = Duration.zero;
-          });
-          _showSnackBar(
-              '${localizations?.recordingFinished ?? 'Enregistrement terminé'}: ${p.basename(path)}',
-              isError: false);
-        }
-      } catch (e) {
-        print("Error stopping recording: $e");
-        if (mounted)
-          _showSnackBar(
-              '${localizations?.errorStopping ?? 'Erreur lors de l\'arrêt'}: $e');
-        setState(() {
-          _isRecording = false;
-          _recordingStream = null;
-        });
-      }
-    } else {
-      try {
-        final microphoneStatus = await Permission.microphone.request();
-        if (!microphoneStatus.isGranted) {
-          if (mounted)
-            _showSnackBar(localizations?.microphonePermissionDenied ??
-                "Permission microphone refusée");
-          return;
-        }
-
-        final Directory tempDir = await getTemporaryDirectory();
-        _recordingPath =
-            '${tempDir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.aac';
-
-        await _audioRecorder!.startRecorder(
-          toFile: _recordingPath,
-          codec: Codec.aacADTS,
-        );
-
-        _recordingStream = _audioRecorder!.onProgress;
-        _recordingStream?.listen((disposition) {
-          if (mounted)
-            setState(() => _recordingDuration = disposition.duration);
-        });
-
-        if (mounted) {
-          setState(() {
-            _isRecording = true;
-            _voiceRecordFile = null;
-          });
-          _showSnackBar(
-              localizations?.recordingInProgress ??
-                  "Enregistrement en cours...",
-              isError: false);
-        }
-      } catch (e) {
-        print("Error starting recording: $e");
-        if (mounted)
-          _showSnackBar(
-              '${localizations?.errorStarting ?? 'Erreur lors du démarrage'}: $e');
-        setState(() {
-          _isRecording = false;
-          _recordingStream = null;
-        });
-      }
-    }
-  }
 
   Future<void> _pickDocument() async {
     final localizations = AppLocalizations.of(context);
@@ -892,6 +987,337 @@ class _ReportProblemDetailsScreenState
     return "$minutes:$seconds";
   }
 
+  // Voice Recording Section Widget - Updated to match complaint screen style
+  Widget _buildVoiceRecordingSection(ThemeData theme) {
+    final localizations = AppLocalizations.of(context);
+    return _buildAttachmentSection(
+      title:
+          localizations?.voiceRecordingSection ?? 'Message Vocal (Optionnel)',
+      subtitle: localizations?.voiceRecordingInstructions ??
+          'Enregistrez un message vocal pour accompagner votre signalement',
+      icon: Icons.mic_rounded,
+      theme: theme,
+      content: Container(
+        // Fixed height to prevent layout shifts and overflow
+        constraints: const BoxConstraints(
+          minHeight: 180,
+          maxHeight: 180,
+        ),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              const Color(0xFFF8FAFC),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Recording State: No recording exists
+            if (_audioPath == null &&
+                !_isRecording &&
+                !_isStoppingRecording) ...[
+              GestureDetector(
+                onTap: _recordVoice,
+                child: Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color.fromARGB(255, 7, 50, 241),
+                        Color.fromARGB(255, 7, 50, 241)
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF667EEA).withOpacity(0.4),
+                        blurRadius: 20,
+                        spreadRadius: 3,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.mic_rounded,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                localizations?.voiceRecordingStart ??
+                    'Appuyez pour enregistrer',
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: const Color(0xFF4A5568),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Flexible(
+                child: Text(
+                  localizations?.voiceRecordingInstructions ??
+                      'Enregistrez un message vocal pour accompagner votre signalement',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: const Color(0xFF718096),
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ]
+
+            // Recording State: Currently recording
+            else if (_isRecording || _isStoppingRecording) ...[
+              AnimatedBuilder(
+                animation: _pulseAnimation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _isStoppingRecording ? 1.0 : _pulseAnimation.value,
+                    child: GestureDetector(
+                      onTap: _isStoppingRecording ? null : _recordVoice,
+                      child: Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color:
+                              _isStoppingRecording ? Colors.grey : Colors.red,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: (_isStoppingRecording
+                                      ? Colors.grey
+                                      : Colors.red)
+                                  .withOpacity(0.4),
+                              blurRadius: 25,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          _isStoppingRecording
+                              ? Icons.hourglass_empty
+                              : Icons.stop_rounded,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: (_isStoppingRecording ? Colors.grey : Colors.red)
+                      .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: _isStoppingRecording ? Colors.grey : Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _isStoppingRecording
+                          ? (localizations?.voiceRecordingStoppingInProgress ??
+                              'Arrêt en cours...')
+                          : '${localizations?.voiceRecordingInProgress ?? 'Enregistrement...'} ${_formatDuration(_recordingDuration)}',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: _isStoppingRecording ? Colors.grey : Colors.red,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _isStoppingRecording
+                    ? (localizations?.voiceRecordingPleaseWait ??
+                        'Veuillez patienter...')
+                    : (localizations?.voiceRecordingStop ??
+                        'Appuyez sur le bouton pour arrêter'),
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: const Color(0xFF718096),
+                ),
+              ),
+            ]
+
+            // Recording State: Recording exists
+            else if (_audioPath != null) ...[
+              // Playback controls
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Play/Pause button
+                  GestureDetector(
+                    onTap: _playRecordedVoice,
+                    child: Container(
+                      width: 55,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: _isPlaying
+                              ? [Colors.orange, Colors.deepOrange]
+                              : [
+                                  const Color(0xFF38A169),
+                                  const Color(0xFF2F855A)
+                                ],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_isPlaying
+                                    ? Colors.orange
+                                    : const Color(0xFF38A169))
+                                .withOpacity(0.3),
+                            blurRadius: 12,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        _isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
+                  ),
+
+                  // Recording info
+                  Flexible(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.audiotrack_rounded,
+                          color: const Color(0xFF38A169),
+                          size: 20,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          localizations?.voiceRecordingReady ??
+                              'Enregistrement prêt',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: const Color(0xFF38A169),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (_totalDuration.inMilliseconds > 0) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_formatDuration(_playbackPosition)} / ${_formatDuration(_totalDuration)}',
+                            style: GoogleFonts.inter(
+                              fontSize: 9,
+                              color: const Color(0xFF38A169),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // Delete button
+                  GestureDetector(
+                    onTap: _deleteRecording,
+                    child: Container(
+                      width: 55,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFE53E3E), Color(0xFFC53030)],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFE53E3E).withOpacity(0.3),
+                            blurRadius: 12,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.delete_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Progress bar
+              if (_totalDuration.inMilliseconds > 0) ...[
+                Container(
+                  width: double.infinity,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF38A169).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(1.5),
+                  ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: _totalDuration.inMilliseconds > 0
+                        ? (_playbackPosition.inMilliseconds /
+                                _totalDuration.inMilliseconds)
+                            .clamp(0.0, 1.0)
+                        : 0.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF38A169),
+                        borderRadius: BorderRadius.circular(1.5),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+              ],
+              Text(
+                localizations?.voiceRecordingPlayInstructions ??
+                    'Appuyez sur lecture pour écouter votre enregistrement',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: const Color(0xFF38A169),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final EdgeInsets safePadding = MediaQuery.of(context).padding;
@@ -1038,45 +1464,10 @@ class _ReportProblemDetailsScreenState
                   return null;
                 },
               ),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                icon: Icon(_isRecording ? Icons.stop_circle : Icons.mic,
-                    color: _isRecording ? errorColor : iconColor),
-                label: Text(
-                  _isRecording
-                      ? '${localizations?.stopRecording ?? 'Arrêter'} (${_formatDuration(_recordingDuration)})'
-                      : localizations?.voiceNote ?? 'Note Vocale',
-                  style: GoogleFonts.inter(
-                      color: _isRecording ? errorColor : iconColor,
-                      fontWeight: FontWeight.w600),
-                ),
-                onPressed: _toggleAudioRecording,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: surfaceColor, // Use surface color
-                  foregroundColor: iconColor,
-                  elevation: 0,
-                  side: BorderSide(color: borderColor),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-              if (_voiceRecordFile != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Row(children: [
-                    Icon(Icons.audiotrack, color: primaryColor, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: Text(p.basename(_voiceRecordFile!.path),
-                            style: const TextStyle(fontSize: 12),
-                            overflow: TextOverflow.ellipsis)),
-                    IconButton(
-                        icon: const Icon(Icons.clear, size: 16),
-                        onPressed: () =>
-                            setState(() => _voiceRecordFile = null)),
-                  ]),
-                ),
+              const SizedBox(height: 24),
+
+              // Voice Recording Section - Updated to match complaint screen
+              _buildVoiceRecordingSection(theme),
               const SizedBox(height: 24),
 
               // Location Section
