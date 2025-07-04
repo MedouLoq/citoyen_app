@@ -59,6 +59,38 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen>
     });
   }
 
+  // Helper function to translate category names
+  String _translateCategoryName(BuildContext context, String? categoryName) {
+    final localizations = AppLocalizations.of(context);
+
+    if (categoryName == null) {
+      return localizations?.unknownCategory ?? 'Catégorie inconnue';
+    }
+
+    // Map category names to localization keys
+    switch (categoryName.toLowerCase()) {
+      case 'routes':
+        return localizations?.categoryRoads ?? 'Routes';
+      case 'eau':
+        return localizations?.categoryWater ?? 'Eau';
+      case 'électricité':
+      case 'électricite':
+      case 'electricite':
+        return localizations?.categoryElectricity ?? 'Électricité';
+      case 'déchets':
+      case 'dechets':
+        return localizations?.categoryWaste ?? 'Déchets';
+      case 'permis de construire ou de démolir':
+      case 'permis':
+        return localizations?.categoryBuildingPermit ??
+            'Permis de construire ou de démolir';
+      case 'autre':
+        return localizations?.categoryOther ?? 'Autre';
+      default:
+        return categoryName; // Return original name if no translation found
+    }
+  }
+
   Future<void> _fetchDetails() async {
     final provider = Provider.of<ProblemProvider>(context, listen: false);
     await provider.fetchProblemDetail(widget.problemId);
@@ -431,7 +463,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen>
               )),
               const SizedBox(height: 16),
 
-              // Category
+              // Category (with localization)
               if (problem['category'] != null)
                 animateItem(Align(
                   alignment: Alignment.centerLeft,
@@ -439,9 +471,8 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen>
                     avatar: Icon(Icons.category_rounded,
                         size: 18, color: colors.secondary),
                     label: Text(
-                      problem['category']['name'] ??
-                          (localizations?.unknownCategory ??
-                              'Catégorie inconnue'),
+                      _translateCategoryName(
+                          context, problem['category']['name']),
                       style: GoogleFonts.inter(
                           fontWeight: FontWeight.w500,
                           color: colors.onSecondaryContainer),
@@ -977,7 +1008,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen>
           ),
           tooltip: _isAudioPlaying
               ? (localizations?.pauseTooltip ?? 'Pause')
-              : (localizations?.backTooltip ?? 'Lecture'),
+              : (localizations?.playTooltip ?? 'Lecture'),
           onPressed: () {
             if (_isAudioPlaying) {
               _audioPlayer!.pause();

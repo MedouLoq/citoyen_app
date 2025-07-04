@@ -113,7 +113,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _isLoading = true;
       });
 
-      const String apiUrl = 'http://192.168.151.228:8000/api/login/';
+      const String apiUrl = 'http://192.168.130.228:8000/api/login/';
 
       try {
         final response = await http
@@ -199,7 +199,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     try {
       final response = await http
           .post(
-            Uri.parse('http://192.168.151.228:8000/api/send-code/'),
+            Uri.parse('http://192.168.130.228:8000/api/send-code/'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'phone_number': phoneNumber,
@@ -223,7 +223,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _isLoading = true;
       });
 
-      const String apiUrl = 'http://192.168.151.228:8000/api/register/';
+      const String apiUrl = 'http://192.168.130.228:8000/api/register/';
 
       try {
         final response = await http
@@ -706,7 +706,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 try {
                   final res = await http
                       .get(Uri.parse(
-                          'http://192.168.151.228:8000/api/municipalities/'))
+                          'http://192.168.130.228:8000/api/municipalities/'))
                       .timeout(const Duration(seconds: 10));
                   if (res.statusCode == 200) {
                     final List data = jsonDecode(res.body);
