@@ -12,19 +12,23 @@ import 'package:citoyen_app/screens/verification_screen_api.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({Key? key}) : super(key: key);
+  final String selectedLanguage;
+
+  const AuthScreen({Key? key, required this.selectedLanguage})
+      : super(key: key);
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
 class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
+  late String _selectedLanguage;
   late TabController _tabController;
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
   late Animation<double> _fadeAnimation;
   Map<String, dynamic>? _selectedMunicipality;
-  String _selectedLanguage = 'ar'; // Default to Arabic
+
   bool _isLoading = false;
 
   // Login form controllers
@@ -44,6 +48,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _selectedLanguage = widget.selectedLanguage;
     _tabController = TabController(length: 2, vsync: this);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -108,7 +113,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _isLoading = true;
       });
 
-      const String apiUrl = 'http://192.168.137.1:8000/api/login/';
+      const String apiUrl = 'http://192.168.151.228:8000/api/login/';
 
       try {
         final response = await http
@@ -194,7 +199,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     try {
       final response = await http
           .post(
-            Uri.parse('http://192.168.137.1:8000/api/send-code/'),
+            Uri.parse('http://192.168.151.228:8000/api/send-code/'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'phone_number': phoneNumber,
@@ -218,7 +223,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _isLoading = true;
       });
 
-      const String apiUrl = 'http://192.168.137.1:8000/api/register/';
+      const String apiUrl = 'http://192.168.151.228:8000/api/register/';
 
       try {
         final response = await http
@@ -701,7 +706,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 try {
                   final res = await http
                       .get(Uri.parse(
-                          'http://192.168.137.1:8000/api/municipalities/'))
+                          'http://192.168.151.228:8000/api/municipalities/'))
                       .timeout(const Duration(seconds: 10));
                   if (res.statusCode == 200) {
                     final List data = jsonDecode(res.body);

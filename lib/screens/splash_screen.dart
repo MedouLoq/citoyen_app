@@ -105,7 +105,9 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _navigateToNextScreen() {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const AuthScreen()),
+      MaterialPageRoute(
+          builder: (context) =>
+              AuthScreen(selectedLanguage: _selectedLanguage)),
     );
   }
 

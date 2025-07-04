@@ -371,7 +371,7 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
           const SizedBox(height: 24),
           Text(
             localizations?.loadingProblems ??
-                'Chargement de votre dashboard...',
+                'Chargement de votre dashboard...', // Changed to dashboard
             style: GoogleFonts.inter(
               fontSize: 16,
               color: colors.onBackground.withOpacity(0.7),
@@ -689,7 +689,8 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  localizations?.updating ?? 'Mise à jour...',
+                                  localizations?.updating ??
+                                      'Mise à jour...', // Changed to updating
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -1269,17 +1270,23 @@ class _DashboardHomeTabState extends State<DashboardHomeTab>
   // Helper functions for activity items - KEEPING EXISTING BACKEND LOGIC
   String _getActivityTitle(
       Map<String, dynamic> activity, AppLocalizations? localizations) {
+    String prefix = '';
+    if (activity['record_type'] == 'PROBLEM') {
+      prefix = localizations?.problemPrefix ?? '';
+    } else if (activity['record_type'] == 'COMPLAINT') {
+      prefix = localizations?.complaintPrefix ?? 'Réclamation: ';
+    }
+
     // Use the title field from the API if available
     if (activity.containsKey('title') && activity['title'] != null) {
-      return activity['title'];
+      return '$prefix';
     }
 
     // Fallback to the old logic if title is not available
     if (activity['record_type'] == 'PROBLEM') {
-      return localizations?.newProblemReported ?? 'Nouveau problème signalé';
+      return '$prefix${localizations?.newProblemReported ?? 'Nouveau problème signalé'}';
     } else if (activity['record_type'] == 'COMPLAINT') {
-      return localizations?.newComplaintSubmitted ??
-          'Nouvelle réclamation soumise';
+      return '$prefix${localizations?.newComplaintSubmitted ?? 'Nouvelle réclamation soumise'}';
     }
     return localizations?.unknownActivity ?? 'Activité inconnue';
   }

@@ -9,11 +9,14 @@ import 'package:shared_preferences/shared_preferences.dart'; // For token
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:citoyen_app/screens/auth/auth_screen.dart';
+import 'package:citoyen_app/screens/splash_screen.dart';
 import 'contact_us_screen.dart';
+import 'package:citoyen_app/main.dart';
+import 'package:citoyen_app/l10n/app_localizations.dart';
 
 // --- Configuration ---
 // Replace with your actual API base URL
-const String API_BASE_URL = "http://192.168.137.1:8000";
+const String API_BASE_URL = "http://192.168.151.228:8000";
 const String PROFILE_URL = "$API_BASE_URL/api/profile/";
 const String PROFILE_UPDATE_URL = "$API_BASE_URL/api/profile/update/";
 
@@ -137,9 +140,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final token = await _getAuthToken();
     if (token == null) {
+      final localizations = AppLocalizations.of(context);
       setState(() {
         _isLoading = false;
-        _errorMessage = "Authentication token not found. Please log in again.";
+        _errorMessage = localizations?.authTokenNotFound ??
+            "Token d'authentification non trouvé. Veuillez vous reconnecter.";
       });
       // Optionally redirect to login
       return;
@@ -168,16 +173,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isLoading = false;
         });
       } else {
+        final localizations = AppLocalizations.of(context);
         setState(() {
           _isLoading = false;
-          _errorMessage = "Failed to load profile: ${response.statusCode}";
+          _errorMessage =
+              "${localizations?.failedToLoadProfile ?? 'Échec du chargement du profil'}: ${response.statusCode}";
         });
       }
     } catch (e) {
       if (!mounted) return;
+      final localizations = AppLocalizations.of(context);
       setState(() {
         _isLoading = false;
-        _errorMessage = "An error occurred: $e";
+        _errorMessage =
+            "${localizations?.anErrorOccurred ?? 'Une erreur s\'est produite'}: $e";
       });
     }
   }
@@ -195,13 +204,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (!mounted) return;
+      final localizations = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to pick image: $e")),
+        SnackBar(
+            content: Text(
+                "${localizations?.failedToPickImage ?? 'Échec de la sélection de l\'image'}: $e")),
       );
     }
   }
 
   void _showImagePickerOptions() {
+    final localizations = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -209,7 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: <Widget>[
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text("Gallery"),
+              title: Text(localizations?.gallery ?? "Galerie"),
               onTap: () {
                 _pickImage(ImageSource.gallery);
                 Navigator.of(context).pop();
@@ -217,7 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.photo_camera),
-              title: const Text("Camera"),
+              title: Text(localizations?.camera ?? "Appareil photo"),
               onTap: () {
                 _pickImage(ImageSource.camera);
                 Navigator.of(context).pop();
@@ -228,7 +241,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ListTile(
                 leading: Icon(Icons.delete_outline,
                     color: Theme.of(context).colorScheme.error),
-                title: Text("Remove Picture",
+                title: Text(
+                    localizations?.removePicture ?? "Supprimer la photo",
                     style:
                         TextStyle(color: Theme.of(context).colorScheme.error)),
                 onTap: () {
@@ -256,10 +270,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     final token = await _getAuthToken();
+    final localizations = AppLocalizations.of(context);
     if (token == null) {
       setState(() {
         _isLoading = false;
-        _errorMessage = "Authentication token not found.";
+        _errorMessage = localizations?.authTokenNotFoundShort ??
+            "Token d'authentification non trouvé.";
       });
       return;
     }
@@ -314,8 +330,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text("Profile updated successfully!"),
+          SnackBar(
+              content: Text(localizations?.profileUpdatedSuccessfully ??
+                  "Profil mis à jour avec succès !"),
               backgroundColor: Colors.green),
         );
       } else {
@@ -323,11 +340,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _isLoading = false;
           _errorMessage =
-              "Failed to update profile: ${response.statusCode} - ${errorData.toString()}";
+              "${localizations?.failedToUpdateProfile ?? 'Échec de la mise à jour du profil'}: ${response.statusCode} - ${errorData.toString()}";
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text("Update failed: ${errorData.toString()}"),
+              content: Text(
+                  "${localizations?.updateFailed ?? 'Échec de la mise à jour'}: ${errorData.toString()}"),
               backgroundColor: Colors.red),
         );
       }
@@ -335,11 +353,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = "An error occurred during update: $e";
+        _errorMessage =
+            "${localizations?.anErrorOccurredDuringUpdate ?? 'Une erreur s\'est produite lors de la mise à jour'}: $e";
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text("An error occurred: $e"),
+            content: Text(
+                "${localizations?.anErrorOccurred ?? 'Une erreur s\'est produite'}: $e"),
             backgroundColor: Colors.red),
       );
     }
@@ -349,11 +369,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
-        title: Text(_isEditing ? "Modifier le Profil" : "Mon Profil",
+        title: Text(
+            _isEditing
+                ? (localizations?.editProfile ?? "Modifier le Profil")
+                : (localizations?.myProfile ?? "Mon Profil"),
             style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
         backgroundColor: colors.surface, // Use surface for AppBar
         elevation: 1,
@@ -375,7 +399,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (!_isEditing && _userProfile != null)
             IconButton(
               icon: const Icon(Icons.edit_outlined),
-              tooltip: "Modifier",
+              tooltip: localizations?.edit ?? "Modifier",
               onPressed: () => setState(() => _isEditing = true),
             ),
           if (_isEditing)
@@ -386,7 +410,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.check),
-              tooltip: "Sauvegarder",
+              tooltip: localizations?.save ?? "Sauvegarder",
               onPressed: _isLoading ? null : _updateProfile,
             ),
         ],
@@ -396,6 +420,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildBody(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     if (_isLoading && _userProfile == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -410,7 +436,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Icon(Icons.error_outline,
                   color: Theme.of(context).colorScheme.error, size: 50),
               const SizedBox(height: 16),
-              Text("Error",
+              Text(localizations?.error ?? "Erreur",
                   style: Theme.of(context)
                       .textTheme
                       .headlineSmall
@@ -420,7 +446,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 20),
               ElevatedButton.icon(
                 icon: const Icon(Icons.refresh),
-                label: const Text("Retry"),
+                label: Text(localizations?.retry ?? "Réessayer"),
                 onPressed: _fetchProfile,
               )
             ],
@@ -430,7 +456,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     if (_userProfile == null) {
-      return const Center(child: Text("No profile data found."));
+      return Center(
+          child: Text(localizations?.noProfileDataFound ??
+              "Aucune donnée de profil trouvée."));
     }
 
     // Display profile data (editable or read-only)
@@ -457,11 +485,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildAvatarSection(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context);
     final citizenProfile = _userProfile?.citizenProfile;
     final currentImageUrl = citizenProfile?.profilePictureUrl;
     final placeholderInitial = citizenProfile?.fullName.isNotEmpty == true
         ? citizenProfile!.fullName[0].toUpperCase()
-        : "U";
+        : (localizations?.user ?? "U")[0].toUpperCase();
 
     ImageProvider? backgroundImage;
     if (_selectedImageFile != null) {
@@ -516,7 +545,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Display Name (non-editable here, editable below)
         if (!_isEditing)
           Text(
-            citizenProfile?.fullName ?? _userProfile?.username ?? "Utilisateur",
+            citizenProfile?.fullName ??
+                _userProfile?.username ??
+                (localizations?.user ?? "Utilisateur"),
             style: GoogleFonts.inter(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -538,12 +569,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildInfoSection(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context);
     final citizenProfile = _userProfile?.citizenProfile;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Informations Personnelles",
+        Text(localizations?.personalInformation ?? "Informations Personnelles",
             style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -551,26 +583,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 16),
         _buildEditableTextField(
           controller: _fullNameController,
-          label: "Nom complet",
+          label: localizations?.fullName ?? "Nom complet",
           icon: Icons.person_outline,
           validator: (value) => value == null || value.isEmpty
-              ? "Le nom ne peut pas être vide"
+              ? (localizations?.fullNameCannotBeEmpty ??
+                  "Le nom ne peut pas être vide")
               : null,
         ),
         const SizedBox(height: 16),
         _buildEditableTextField(
           controller: _addressController,
-          label: "Adresse",
+          label: localizations?.address ?? "Adresse",
           icon: Icons.location_on_outlined,
           maxLines: 2,
           // No validator needed if address is optional
         ),
         const SizedBox(height: 16),
         // Read-only fields (Example: NNI, Phone)
-        _buildReadOnlyInfoTile(context, Icons.badge_outlined, "NNI",
-            citizenProfile?.nni ?? "Non défini"),
-        _buildReadOnlyInfoTile(context, Icons.phone_outlined, "Téléphone",
-            _userProfile?.phoneNumber ?? "Non défini"),
+        _buildReadOnlyInfoTile(
+            context,
+            Icons.badge_outlined,
+            localizations?.nni ?? "NNI",
+            citizenProfile?.nni ?? (localizations?.notDefined ?? "Non défini")),
+        _buildReadOnlyInfoTile(
+            context,
+            Icons.phone_outlined,
+            localizations?.phone ?? "Téléphone",
+            _userProfile?.phoneNumber ??
+                (localizations?.notDefined ?? "Non défini")),
         // Add Municipality if needed
       ],
     );
@@ -660,11 +700,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildActionButtons(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context);
     // Add other actions like Change Password, Logout etc.
     return Column(
       children: [
-        _buildProfileOption(
-            context, Icons.info_outline_rounded, "À propos de nous", () {
+        _buildProfileOption(context, Icons.info_outline_rounded,
+            localizations?.aboutUs ?? "À propos de nous", () {
           // TODO: Navigate to About Us screen
           Navigator.push(
             context,
@@ -676,7 +717,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 24),
         ElevatedButton.icon(
           icon: Icon(Icons.logout_rounded, color: colors.onError),
-          label: Text("Se déconnecter",
+          label: Text(localizations?.logout ?? "Se déconnecter",
               style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -686,7 +727,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             await prefs.remove("auth_token");
             if (mounted) {
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const AuthScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const MyApp(),
+                ),
                 (Route<dynamic> route) => false,
               );
             }

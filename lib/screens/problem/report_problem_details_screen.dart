@@ -19,6 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart'; // For web storage
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // For native storage
 import 'package:geocoding/geocoding.dart'; // Import geocoding package
 import 'package:intl/intl.dart'; // For date formatting if needed
+import 'package:citoyen_app/l10n/app_localizations.dart';
 
 // CategoryModel definition (assuming it exists as provided)
 class CategoryModel {
@@ -163,24 +164,26 @@ class _ReportProblemDetailsScreenState
   }
 
   void _showLocationServiceDialog() {
+    final localizations = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Services de localisation désactivés'),
-          content: const Text(
+          title: Text(localizations?.locationServicesDisabled ??
+              'Services de localisation désactivés'),
+          content: Text(localizations?.locationServicesDisabledMessage ??
               'Veuillez activer les services de localisation dans les paramètres de votre appareil.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: Text(localizations?.ok ?? 'OK'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 Geolocator.openLocationSettings();
               },
-              child: const Text('Paramètres'),
+              child: Text(localizations?.settings ?? 'Paramètres'),
             ),
           ],
         );
@@ -189,24 +192,26 @@ class _ReportProblemDetailsScreenState
   }
 
   void _showPermissionDialog() {
+    final localizations = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Permission requise'),
-          content: const Text(
+          title:
+              Text(localizations?.permissionRequired ?? 'Permission requise'),
+          content: Text(localizations?.permissionRequiredMessage ??
               'Cette application nécessite la permission de localisation pour fonctionner. Veuillez l\'activer dans les paramètres.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annuler'),
+              child: Text(localizations?.cancel ?? 'Annuler'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 Geolocator.openAppSettings();
               },
-              child: const Text('Paramètres'),
+              child: Text(localizations?.settings ?? 'Paramètres'),
             ),
           ],
         );
@@ -215,6 +220,7 @@ class _ReportProblemDetailsScreenState
   }
 
   Future<void> _getCurrentLocation() async {
+    final localizations = AppLocalizations.of(context);
     if (!mounted) return;
     setState(() {
       _isLoadingLocation = true;
@@ -246,18 +252,22 @@ class _ReportProblemDetailsScreenState
       if (mounted) {
         setState(() {
           _isLoadingLocation = false;
-          _errorMessage =
+          _errorMessage = localizations?.locationError ??
               'Erreur de localisation: Impossible d\'obtenir la position.';
         });
-        _showSnackBar('Erreur de localisation: $e');
+        _showSnackBar(
+            '${localizations?.locationError ?? 'Erreur de localisation'}: $e');
       }
     }
   }
 
   Future<void> _getMunicipalityDetails(Position? position) async {
+    final localizations = AppLocalizations.of(context);
     if (position == null) {
       print("Position is null, cannot fetch municipality details.");
-      if (mounted) setState(() => _errorMessage = "Position non disponible.");
+      if (mounted)
+        setState(() => _errorMessage =
+            localizations?.positionNotAvailable ?? "Position non disponible.");
       return;
     }
     if (_isFetchingMunicipalityId || !mounted) return;
@@ -310,18 +320,25 @@ class _ReportProblemDetailsScreenState
         });
 
         if (fetchedId == null || fetchedId.isEmpty) {
-          _showSnackBar("Municipalité '$candidateName' non trouvée.",
+          _showSnackBar(
+              '${localizations?.municipality ?? 'Municipalité'} \'$candidateName\' ${localizations?.municipalityNotFound ?? 'non trouvée.'}',
               isError: true);
         }
       } else {
-        _showSnackBar("Impossible d'extraire le nom de la municipalité.",
+        _showSnackBar(
+            localizations?.cannotExtractMunicipality ??
+                "Impossible d'extraire le nom de la municipalité.",
             isError: true);
       }
     } catch (e) {
       print("Error during geocoding or fetching municipality ID: $e");
       if (mounted) {
-        _showSnackBar("Erreur (géocodage/municipalité): $e", isError: true);
-        setState(() => _errorMessage = "Erreur détermination municipalité.");
+        _showSnackBar(
+            '${localizations?.errorDeterminingMunicipality ?? 'Erreur (géocodage/municipalité)'}: $e',
+            isError: true);
+        setState(() => _errorMessage =
+            localizations?.errorDeterminingMunicipality ??
+                "Erreur détermination municipalité.");
       }
     } finally {
       if (mounted) {
@@ -469,7 +486,7 @@ class _ReportProblemDetailsScreenState
   Future<String?> _fetchMunicipalityId(
       String candidateName, double lat, double lon) async {
     const String baseUrl =
-        "http://192.168.137.1:8000"; // Ensure this is correct
+        "http://192.168.151.228:8000"; // Ensure this is correct
     final encodedName = Uri.encodeComponent(candidateName.trim());
     final url = Uri.parse(
         "$baseUrl/get_municipality_id/?name=$encodedName&lat=$lat&lon=$lon");
@@ -536,12 +553,15 @@ class _ReportProblemDetailsScreenState
   }
 
   Future<void> _initializeAudioRecorder() async {
+    final localizations = AppLocalizations.of(context);
     try {
       _audioRecorder = FlutterSoundRecorder();
       final microphoneStatus = await Permission.microphone.request();
       if (!microphoneStatus.isGranted) {
         print("Microphone permission denied");
-        if (mounted) _showSnackBar("Permission microphone refusée");
+        if (mounted)
+          _showSnackBar(localizations?.microphonePermissionDenied ??
+              "Permission microphone refusée");
         setState(() => _isRecorderInitialized = false);
         return;
       }
@@ -556,6 +576,7 @@ class _ReportProblemDetailsScreenState
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    final localizations = AppLocalizations.of(context);
     try {
       final ImagePicker picker = ImagePicker();
       if (source == ImageSource.gallery) {
@@ -578,22 +599,28 @@ class _ReportProblemDetailsScreenState
           if (_photoFiles.length < 3) {
             setState(() => _photoFiles.add(pickedFile));
           } else {
-            _showSnackBar("Vous ne pouvez joindre que 3 images maximum.");
+            _showSnackBar(localizations?.maxImagesReached ??
+                "Vous ne pouvez joindre que 3 images maximum.");
           }
         }
       }
     } catch (e) {
-      if (mounted) _showSnackBar("Erreur sélection d'image: $e");
+      if (mounted)
+        _showSnackBar(
+            '${localizations?.imageSelectionError ?? 'Erreur sélection d\'image'}: $e');
     }
   }
 
   // --- Updated Video Picking ---
   Future<void> _pickOrRecordVideo(ImageSource source) async {
+    final localizations = AppLocalizations.of(context);
     // Request camera permission if needed
     if (source == ImageSource.camera) {
       final cameraStatus = await Permission.camera.request();
       if (!cameraStatus.isGranted) {
-        if (mounted) _showSnackBar("Permission caméra refusée");
+        if (mounted)
+          _showSnackBar(localizations?.cameraPermissionDenied ??
+              "Permission caméra refusée");
         return;
       }
     }
@@ -607,14 +634,19 @@ class _ReportProblemDetailsScreenState
         });
       }
     } catch (e) {
-      if (mounted) _showSnackBar("Erreur sélection/enregistrement vidéo: $e");
+      if (mounted)
+        _showSnackBar(
+            '${localizations?.videoSelectionError ?? 'Erreur sélection/enregistrement vidéo'}: $e');
     }
   }
   // --- End Updated Video Picking ---
 
   Future<void> _toggleAudioRecording() async {
+    final localizations = AppLocalizations.of(context);
     if (!_isRecorderInitialized || _audioRecorder == null) {
-      if (mounted) _showSnackBar("Enregistreur audio non initialisé");
+      if (mounted)
+        _showSnackBar(localizations?.audioRecorderNotInitialized ??
+            "Enregistreur audio non initialisé");
       return;
     }
 
@@ -628,12 +660,15 @@ class _ReportProblemDetailsScreenState
             _recordingStream = null;
             _recordingDuration = Duration.zero;
           });
-          _showSnackBar("Enregistrement terminé: ${p.basename(path)}",
+          _showSnackBar(
+              '${localizations?.recordingFinished ?? 'Enregistrement terminé'}: ${p.basename(path)}',
               isError: false);
         }
       } catch (e) {
         print("Error stopping recording: $e");
-        if (mounted) _showSnackBar("Erreur lors de l'arrêt: $e");
+        if (mounted)
+          _showSnackBar(
+              '${localizations?.errorStopping ?? 'Erreur lors de l\'arrêt'}: $e');
         setState(() {
           _isRecording = false;
           _recordingStream = null;
@@ -643,7 +678,9 @@ class _ReportProblemDetailsScreenState
       try {
         final microphoneStatus = await Permission.microphone.request();
         if (!microphoneStatus.isGranted) {
-          if (mounted) _showSnackBar("Permission microphone refusée");
+          if (mounted)
+            _showSnackBar(localizations?.microphonePermissionDenied ??
+                "Permission microphone refusée");
           return;
         }
 
@@ -667,11 +704,16 @@ class _ReportProblemDetailsScreenState
             _isRecording = true;
             _voiceRecordFile = null;
           });
-          _showSnackBar("Enregistrement en cours...", isError: false);
+          _showSnackBar(
+              localizations?.recordingInProgress ??
+                  "Enregistrement en cours...",
+              isError: false);
         }
       } catch (e) {
         print("Error starting recording: $e");
-        if (mounted) _showSnackBar("Erreur lors du démarrage: $e");
+        if (mounted)
+          _showSnackBar(
+              '${localizations?.errorStarting ?? 'Erreur lors du démarrage'}: $e');
         setState(() {
           _isRecording = false;
           _recordingStream = null;
@@ -681,6 +723,7 @@ class _ReportProblemDetailsScreenState
   }
 
   Future<void> _pickDocument() async {
+    final localizations = AppLocalizations.of(context);
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -691,21 +734,27 @@ class _ReportProblemDetailsScreenState
         setState(() => _documentFiles = result.files.take(3).toList());
       }
     } catch (e) {
-      if (mounted) _showSnackBar("Erreur sélection de document: $e");
+      if (mounted)
+        _showSnackBar(
+            '${localizations?.documentSelectionError ?? 'Erreur sélection de document'}: $e');
     }
   }
 
   Future<void> _submitProblem() async {
+    final localizations = AppLocalizations.of(context);
     if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
-      _showSnackBar("Veuillez remplir les champs obligatoires.");
+      _showSnackBar(localizations?.pleaseFillRequiredFields ??
+          "Veuillez remplir les champs obligatoires.");
       return;
     }
     if (_selectedLocation == null) {
-      _showSnackBar("Veuillez sélectionner la position du problème.");
+      _showSnackBar(localizations?.pleaseSelectProblemLocation ??
+          "Veuillez sélectionner la position du problème.");
       return;
     }
     if (_isFetchingMunicipalityId) {
-      _showSnackBar("Veuillez patienter (municipalité)...");
+      _showSnackBar(localizations?.pleaseWaitMunicipality ??
+          "Veuillez patienter (municipalité)...");
       return;
     }
     // Optional: Require municipality ID
@@ -724,14 +773,15 @@ class _ReportProblemDetailsScreenState
 
     String? authToken = await _getAuthToken();
     if (authToken == null || authToken.isEmpty) {
-      _showSnackBar("Erreur: Token d'authentification manquant.");
+      _showSnackBar(localizations?.authTokenMissing ??
+          "Erreur: Token d'authentification manquant.");
       if (mounted) setState(() => _isSubmitting = false);
       return;
     }
 
     try {
       var uri = Uri.parse(
-          "http://192.168.137.1:8000/api/problems/report/"); // Ensure correct endpoint
+          "http://192.168.151.228:8000/api/problems/report/"); // Ensure correct endpoint
       var request = http.MultipartRequest("POST", uri);
       request.headers['Authorization'] = 'Token $authToken';
 
@@ -780,7 +830,10 @@ class _ReportProblemDetailsScreenState
       print("Submission Response Body: $responseBody");
 
       if (response.statusCode == 201) {
-        _showSnackBar("Problème signalé avec succès!", isError: false);
+        _showSnackBar(
+            localizations?.problemReportedSuccess ??
+                "Problème signalé avec succès!",
+            isError: false);
         if (mounted) Navigator.pop(context);
       } else {
         String errorMsg = response.reasonPhrase ?? 'Erreur inconnue';
@@ -792,15 +845,20 @@ class _ReportProblemDetailsScreenState
         } catch (_) {
           errorMsg = responseBody.isNotEmpty ? responseBody : errorMsg;
         }
-        _showSnackBar("Échec: $errorMsg (Code: ${response.statusCode})",
+        _showSnackBar(
+            '${localizations?.submissionFailed ?? 'Échec'}: $errorMsg (Code: ${response.statusCode})',
             isError: true);
-        setState(() => _errorMessage = "Échec: $errorMsg");
+        setState(() => _errorMessage =
+            '${localizations?.submissionFailed ?? 'Échec'}: $errorMsg');
       }
     } catch (e) {
       print("Error submitting problem: $e");
       if (mounted) {
-        _showSnackBar("Erreur réseau/système: $e", isError: true);
-        setState(() => _errorMessage = "Erreur: $e");
+        _showSnackBar(
+            '${localizations?.networkSystemError ?? 'Erreur réseau/système'}: $e',
+            isError: true);
+        setState(() => _errorMessage =
+            '${localizations?.networkSystemError ?? 'Erreur'}: $e');
       }
     } finally {
       if (mounted) {
@@ -838,6 +896,7 @@ class _ReportProblemDetailsScreenState
   Widget build(BuildContext context) {
     final EdgeInsets safePadding = MediaQuery.of(context).padding;
     final ThemeData theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context);
     // Derive colors from theme
     final Color primaryColor = theme.colorScheme.primary;
     final Color onPrimaryColor = theme.colorScheme.onPrimary;
@@ -860,7 +919,7 @@ class _ReportProblemDetailsScreenState
       backgroundColor: theme.colorScheme.background, // Use theme background
       appBar: AppBar(
         title: Text(
-          'Signaler un Problème',
+          localizations?.reportProblemTitle ?? 'Signaler un Problème',
           style: GoogleFonts.inter(
               fontWeight: FontWeight.bold, color: onPrimaryColor),
         ),
@@ -900,7 +959,9 @@ class _ReportProblemDetailsScreenState
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: primaryColor)),
                         const SizedBox(width: 8),
-                        Text("Recherche municipalité...",
+                        Text(
+                            localizations?.searchingMunicipality ??
+                                "Recherche municipalité...",
                             style: GoogleFonts.inter(color: primaryColor)),
                       ]),
                 ).animate().fadeIn(),
@@ -929,7 +990,7 @@ class _ReportProblemDetailsScreenState
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: Text(
-                    "Municipalité: ${_municipalityCandidateName ?? ''} (ID: $_municipalityId)",
+                    "${localizations?.municipality ?? 'Municipalité'}: ${_municipalityCandidateName ?? ''} (ID: $_municipalityId)",
                     style: GoogleFonts.inter(
                         color: primaryColor,
                         fontWeight: FontWeight.w500,
@@ -944,7 +1005,7 @@ class _ReportProblemDetailsScreenState
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: Text(
-                    "Municipalité '${_municipalityCandidateName}' non trouvée.",
+                    "${localizations?.municipality ?? 'Municipalité'} '${_municipalityCandidateName}' ${localizations?.municipalityNotFound ?? 'non trouvée.'}",
                     style: GoogleFonts.inter(
                         color: Colors.orange.shade900,
                         fontWeight: FontWeight.w500,
@@ -954,19 +1015,26 @@ class _ReportProblemDetailsScreenState
                 ).animate().fadeIn(),
 
               // Description Section
-              _buildSectionTitle('Description du problème*', theme),
+              _buildSectionTitle(
+                  localizations?.problemDescriptionTitle ??
+                      'Description du problème*',
+                  theme),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _descriptionController,
                 decoration: _inputDecoration(
-                  hintText: 'Décrivez le problème en détail...',
+                  hintText: localizations?.problemDescriptionHint ??
+                      'Décrivez le problème en détail...',
                   theme: theme,
                 ),
                 maxLines: 5,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty)
-                    return 'Veuillez fournir une description';
-                  if (value.trim().length < 10) return 'Minimum 10 caractères';
+                    return localizations?.pleaseProvideDescription ??
+                        'Veuillez fournir une description';
+                  if (value.trim().length < 10)
+                    return localizations?.minimum10Characters ??
+                        'Minimum 10 caractères';
                   return null;
                 },
               ),
@@ -976,8 +1044,8 @@ class _ReportProblemDetailsScreenState
                     color: _isRecording ? errorColor : iconColor),
                 label: Text(
                   _isRecording
-                      ? 'Arrêter (${_formatDuration(_recordingDuration)})'
-                      : 'Note Vocale',
+                      ? '${localizations?.stopRecording ?? 'Arrêter'} (${_formatDuration(_recordingDuration)})'
+                      : localizations?.voiceNote ?? 'Note Vocale',
                   style: GoogleFonts.inter(
                       color: _isRecording ? errorColor : iconColor,
                       fontWeight: FontWeight.w600),
@@ -1013,8 +1081,10 @@ class _ReportProblemDetailsScreenState
 
               // Location Section
               _buildAttachmentSection(
-                title: 'Emplacement du problème*',
-                subtitle: 'Vous devez choisir un emplacement',
+                title: localizations?.problemLocationTitle ??
+                    'Emplacement du problème*',
+                subtitle: localizations?.problemLocationSubtitle ??
+                    'Vous devez choisir un emplacement',
                 icon: Icons.location_on,
                 theme: theme,
                 content: Column(
@@ -1031,7 +1101,9 @@ class _ReportProblemDetailsScreenState
                         borderRadius: BorderRadius.circular(8),
                         child: _isLoadingLocation || _userLocation == null
                             ? Center(
-                                child: Text('Chargement de la carte...',
+                                child: Text(
+                                    localizations?.loadingMap ??
+                                        'Chargement de la carte...',
                                     style:
                                         TextStyle(color: secondaryTextColor)))
                             : Stack(
@@ -1220,7 +1292,9 @@ class _ReportProblemDetailsScreenState
                                             ));
 
                                             _showSnackBar(
-                                                "Centré sur votre position",
+                                                localizations
+                                                        ?.centeredOnYourPosition ??
+                                                    "Centré sur votre position",
                                                 isError: false);
                                           } else {
                                             // Try to get location again if not available
@@ -1238,7 +1312,7 @@ class _ReportProblemDetailsScreenState
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(
-                          'Lat: ${_selectedLocation!.latitude.toStringAsFixed(5)}, Lon: ${_selectedLocation!.longitude.toStringAsFixed(5)}',
+                          '${localizations?.lat ?? 'Lat'}: ${_selectedLocation!.latitude.toStringAsFixed(5)}, ${localizations?.lon ?? 'Lon'}: ${_selectedLocation!.longitude.toStringAsFixed(5)}',
                           style: TextStyle(
                               fontSize: 12, color: secondaryTextColor),
                         ),
@@ -1250,8 +1324,9 @@ class _ReportProblemDetailsScreenState
 
               // Documents Section
               _buildAttachmentSection(
-                title: 'Documents à l\'appui',
-                subtitle: 'Vous pouvez joindre jusqu\'à 3 documents',
+                title: localizations?.documentsTitle ?? 'Documents à l\'appui',
+                subtitle: localizations?.documentsSubtitle ??
+                    'Vous pouvez joindre jusqu\'à 3 documents',
                 icon: Icons.description,
                 theme: theme,
                 content: Column(
@@ -1259,7 +1334,8 @@ class _ReportProblemDetailsScreenState
                   children: [
                     ElevatedButton.icon(
                       icon: const Icon(Icons.attach_file),
-                      label: const Text('Choisir des documents'),
+                      label: Text(localizations?.chooseDocuments ??
+                          'Choisir des documents'),
                       onPressed: _pickDocument,
                       style: _attachmentButtonStyle(theme: theme),
                     ),
@@ -1275,8 +1351,9 @@ class _ReportProblemDetailsScreenState
 
               // Images Section
               _buildAttachmentSection(
-                title: 'Images à l\'appui',
-                subtitle: 'Vous pouvez joindre jusqu\'à 3 images',
+                title: localizations?.imagesTitle ?? 'Images à l\'appui',
+                subtitle: localizations?.imagesSubtitle ??
+                    'Vous pouvez joindre jusqu\'à 3 images',
                 icon: Icons.camera_alt,
                 theme: theme,
                 content: Column(
@@ -1287,7 +1364,7 @@ class _ReportProblemDetailsScreenState
                       children: [
                         ElevatedButton.icon(
                           icon: const Icon(Icons.camera_alt),
-                          label: const Text('Caméra'),
+                          label: Text(localizations?.camera ?? 'Caméra'),
                           onPressed: _photoFiles.length < 3
                               ? () => _pickImage(ImageSource.camera)
                               : null,
@@ -1296,7 +1373,7 @@ class _ReportProblemDetailsScreenState
                         ),
                         ElevatedButton.icon(
                           icon: const Icon(Icons.photo_library),
-                          label: const Text('Galerie'),
+                          label: Text(localizations?.gallery ?? 'Galerie'),
                           onPressed: _photoFiles.length < 3
                               ? () => _pickImage(ImageSource.gallery)
                               : null,
@@ -1319,8 +1396,9 @@ class _ReportProblemDetailsScreenState
 
               // --- Video Section (Updated) ---
               _buildAttachmentSection(
-                title: 'Vidéo à l\'appui',
-                subtitle: 'Vous pouvez joindre une seule vidéo',
+                title: localizations?.videoTitle ?? 'Vidéo à l\'appui',
+                subtitle: localizations?.videoSubtitle ??
+                    'Vous pouvez joindre une seule vidéo',
                 icon: Icons.videocam,
                 theme: theme,
                 content: Column(
@@ -1332,7 +1410,7 @@ class _ReportProblemDetailsScreenState
                         // Record Video Button
                         ElevatedButton.icon(
                           icon: const Icon(Icons.videocam),
-                          label: const Text('Enregistrer'),
+                          label: Text(localizations?.record ?? 'Enregistrer'),
                           onPressed: _videoFile == null
                               ? () => _pickOrRecordVideo(ImageSource.camera)
                               : null,
@@ -1342,7 +1420,7 @@ class _ReportProblemDetailsScreenState
                         // Pick Video Button
                         ElevatedButton.icon(
                           icon: const Icon(Icons.video_library),
-                          label: const Text('Galerie'),
+                          label: Text(localizations?.videoLibrary ?? 'Galerie'),
                           onPressed: _videoFile == null
                               ? () => _pickOrRecordVideo(ImageSource.gallery)
                               : null,
@@ -1375,7 +1453,7 @@ class _ReportProblemDetailsScreenState
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: const Text('ENVOYER'),
+                        child: Text(localizations?.send ?? 'ENVOYER'),
                       ),
               ),
               const SizedBox(height: 16),

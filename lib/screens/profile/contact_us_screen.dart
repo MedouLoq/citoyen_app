@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:citoyen_app/l10n/app_localizations.dart';
 
 class ContactUsScreen extends StatelessWidget {
   const ContactUsScreen({Key? key}) : super(key: key);
@@ -17,6 +18,8 @@ class ContactUsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return Scaffold(
       body: Stack(
         children: [
@@ -64,7 +67,7 @@ class ContactUsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Nous Contacter',
+                    localizations?.contactUs ?? 'Nous Contacter',
                     style: GoogleFonts.montserrat(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -98,13 +101,15 @@ class ContactUsScreen extends StatelessWidget {
                   _buildContactInfoCard(
                     context,
                     icon: Icons.phone,
-                    title: 'Numéro de téléphone d\'Arafat',
+                    title: localizations?.arafatPhoneNumber ??
+                        'Numéro de téléphone d\'Arafat',
                     content: '+222 36310068',
                     onTap: () => _launchPhoneDialer('+22236310068'),
                   ),
                   const Spacer(),
                   Text(
-                    'Nous sommes là pour vous aider !',
+                    localizations?.weAreHereToHelp ??
+                        'Nous sommes là pour vous aider !',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       color: Colors.white.withOpacity(0.8),

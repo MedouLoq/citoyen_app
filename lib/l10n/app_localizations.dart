@@ -1703,7 +1703,7 @@ abstract class AppLocalizations {
   /// No description provided for @camera.
   ///
   /// In fr, this message translates to:
-  /// **'Caméra'**
+  /// **'Appareil photo'**
   String get camera;
 
   /// No description provided for @gallery.
@@ -1843,6 +1843,264 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Lon'**
   String get lon;
+
+  /// No description provided for @problemPrefix.
+  ///
+  /// In fr, this message translates to:
+  /// **'Problème: '**
+  String get problemPrefix;
+
+  /// No description provided for @complaintPrefix.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réclamation: '**
+  String get complaintPrefix;
+
+  /// No description provided for @videoLoadError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Erreur chargement vidéo'**
+  String get videoLoadError;
+
+  /// No description provided for @audioLoadError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Erreur chargement audio'**
+  String get audioLoadError;
+
+  /// No description provided for @expandMap.
+  ///
+  /// In fr, this message translates to:
+  /// **'Agrandir la carte'**
+  String get expandMap;
+
+  /// No description provided for @collapseMap.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réduire la carte'**
+  String get collapseMap;
+
+  /// No description provided for @backTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retour'**
+  String get backTooltip;
+
+  /// No description provided for @sectionDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Description'**
+  String get sectionDescription;
+
+  /// No description provided for @sectionVoiceNote.
+  ///
+  /// In fr, this message translates to:
+  /// **'Note Vocale'**
+  String get sectionVoiceNote;
+
+  /// No description provided for @sectionLocation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Emplacement'**
+  String get sectionLocation;
+
+  /// No description provided for @sectionVideo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vidéo'**
+  String get sectionVideo;
+
+  /// No description provided for @sectionDocument.
+  ///
+  /// In fr, this message translates to:
+  /// **'Document'**
+  String get sectionDocument;
+
+  /// No description provided for @sectionAdminComment.
+  ///
+  /// In fr, this message translates to:
+  /// **'Commentaire Admin'**
+  String get sectionAdminComment;
+
+  /// No description provided for @reduceMap.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réduire la carte'**
+  String get reduceMap;
+
+  /// No description provided for @enlargeMap.
+  ///
+  /// In fr, this message translates to:
+  /// **'Agrandir la carte'**
+  String get enlargeMap;
+
+  /// No description provided for @myProfile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mon Profil'**
+  String get myProfile;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le Profil'**
+  String get editProfile;
+
+  /// No description provided for @edit.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier'**
+  String get edit;
+
+  /// No description provided for @save.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sauvegarder'**
+  String get save;
+
+  /// No description provided for @error.
+  ///
+  /// In fr, this message translates to:
+  /// **'Erreur'**
+  String get error;
+
+  /// No description provided for @noProfileDataFound.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune donnée de profil trouvée.'**
+  String get noProfileDataFound;
+
+  /// No description provided for @personalInformation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Informations Personnelles'**
+  String get personalInformation;
+
+  /// No description provided for @address.
+  ///
+  /// In fr, this message translates to:
+  /// **'Adresse'**
+  String get address;
+
+  /// No description provided for @phone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Téléphone'**
+  String get phone;
+
+  /// No description provided for @notDefined.
+  ///
+  /// In fr, this message translates to:
+  /// **'Non défini'**
+  String get notDefined;
+
+  /// No description provided for @user.
+  ///
+  /// In fr, this message translates to:
+  /// **'Utilisateur'**
+  String get user;
+
+  /// No description provided for @removePicture.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer la photo'**
+  String get removePicture;
+
+  /// No description provided for @profileUpdatedSuccessfully.
+  ///
+  /// In fr, this message translates to:
+  /// **'Profil mis à jour avec succès !'**
+  String get profileUpdatedSuccessfully;
+
+  /// No description provided for @updateFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Échec de la mise à jour'**
+  String get updateFailed;
+
+  /// No description provided for @anErrorOccurred.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une erreur s\'est produite'**
+  String get anErrorOccurred;
+
+  /// No description provided for @fullNameCannotBeEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le nom ne peut pas être vide'**
+  String get fullNameCannotBeEmpty;
+
+  /// No description provided for @authTokenNotFound.
+  ///
+  /// In fr, this message translates to:
+  /// **'Token d\'authentification non trouvé. Veuillez vous reconnecter.'**
+  String get authTokenNotFound;
+
+  /// No description provided for @authTokenNotFoundShort.
+  ///
+  /// In fr, this message translates to:
+  /// **'Token d\'authentification non trouvé.'**
+  String get authTokenNotFoundShort;
+
+  /// No description provided for @failedToLoadProfile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Échec du chargement du profil'**
+  String get failedToLoadProfile;
+
+  /// No description provided for @failedToUpdateProfile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Échec de la mise à jour du profil'**
+  String get failedToUpdateProfile;
+
+  /// No description provided for @failedToPickImage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Échec de la sélection de l\'image'**
+  String get failedToPickImage;
+
+  /// No description provided for @anErrorOccurredDuringUpdate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une erreur s\'est produite lors de la mise à jour'**
+  String get anErrorOccurredDuringUpdate;
+
+  /// No description provided for @aboutUs.
+  ///
+  /// In fr, this message translates to:
+  /// **'À propos de nous'**
+  String get aboutUs;
+
+  /// No description provided for @logout.
+  ///
+  /// In fr, this message translates to:
+  /// **'Se déconnecter'**
+  String get logout;
+
+  /// No description provided for @contactUs.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nous Contacter'**
+  String get contactUs;
+
+  /// No description provided for @weAreHereToHelp.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nous sommes là pour vous aider !'**
+  String get weAreHereToHelp;
+
+  /// No description provided for @arafatPhoneNumber.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro de téléphone d\'Arafat'**
+  String get arafatPhoneNumber;
+
+  /// No description provided for @cannotLaunch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible de lancer'**
+  String get cannotLaunch;
 }
 
 class _AppLocalizationsDelegate

@@ -118,7 +118,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get phoneNumber => 'رقم الهاتف';
 
   @override
-  String get nni => 'رقم التعريف الوطني';
+  String get nni => 'الرقم الوطني';
 
   @override
   String get password => 'كلمة المرور';
@@ -592,13 +592,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get complaintDetailTitle => 'تفاصيل الشكوى';
 
   @override
-  String get loadingDetails => 'تحميل التفاصيل...';
+  String get loadingDetails => 'جارٍ تحميل التفاصيل...';
 
   @override
-  String get errorTitle => 'عذراً! خطأ';
+  String get errorTitle => 'أُوبس! خطأ';
 
   @override
-  String get backButton => 'العودة';
+  String get backButton => 'عودة';
 
   @override
   String get goBack => 'رجوع';
@@ -610,7 +610,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get descriptionTitle => 'الوصف';
 
   @override
-  String get noDescriptionProvided => 'لم يتم تقديم وصف.';
+  String get noDescriptionProvided => 'لا يوجد وصف متاح.';
 
   @override
   String get municipalityTitle => 'البلدية المعنية';
@@ -655,7 +655,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get linkNotAvailable => 'الرابط غير متوفر';
 
   @override
-  String get cannotOpenLink => 'لا يمكن فتح الرابط';
+  String get cannotOpenLink => 'تعذر فتح الرابط';
 
   @override
   String get videoLoadingErrorMessage => 'خطأ في تحميل الفيديو';
@@ -727,10 +727,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get documentTitle => 'المستند';
 
   @override
-  String get videoNotAvailable => 'الفيديو غير متوفر أو خطأ';
+  String get videoNotAvailable => 'الفيديو غير متاح أو خطأ';
 
   @override
-  String get audioNotAvailable => 'الصوت غير متوفر أو خطأ';
+  String get audioNotAvailable => 'الصوت غير متاح أو خطأ';
 
   @override
   String get pauseTooltip => 'إيقاف مؤقت';
@@ -923,4 +923,134 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get lon => 'خط الطول';
+
+  @override
+  String get problemPrefix => 'المشكلة:';
+
+  @override
+  String get complaintPrefix => 'مطالبة : ';
+
+  @override
+  String get videoLoadError => 'خطأ في تحميل الفيديو';
+
+  @override
+  String get audioLoadError => 'خطأ في تحميل الصوت';
+
+  @override
+  String get expandMap => 'توسيع الخريطة';
+
+  @override
+  String get collapseMap => 'تقليل الخريطة';
+
+  @override
+  String get backTooltip => 'عودة';
+
+  @override
+  String get sectionDescription => 'الوصف';
+
+  @override
+  String get sectionVoiceNote => 'مذكرة صوتية';
+
+  @override
+  String get sectionLocation => 'الموقع';
+
+  @override
+  String get sectionVideo => 'الفيديو';
+
+  @override
+  String get sectionDocument => 'الوثيقة';
+
+  @override
+  String get sectionAdminComment => 'تعليق المسؤول';
+
+  @override
+  String get reduceMap => 'تصغير الخريطة';
+
+  @override
+  String get enlargeMap => 'تكبير الخريطة';
+
+  @override
+  String get myProfile => 'ملفي الشخصي';
+
+  @override
+  String get editProfile => 'تعديل الملف الشخصي';
+
+  @override
+  String get edit => 'تعديل';
+
+  @override
+  String get save => 'حفظ';
+
+  @override
+  String get error => 'خطأ';
+
+  @override
+  String get noProfileDataFound => 'لم يتم العثور على بيانات الملف الشخصي.';
+
+  @override
+  String get personalInformation => 'المعلومات الشخصية';
+
+  @override
+  String get address => 'العنوان';
+
+  @override
+  String get phone => 'الهاتف';
+
+  @override
+  String get notDefined => 'غير محدد';
+
+  @override
+  String get user => 'المستخدم';
+
+  @override
+  String get removePicture => 'إزالة الصورة';
+
+  @override
+  String get profileUpdatedSuccessfully => 'تم تحديث الملف الشخصي بنجاح!';
+
+  @override
+  String get updateFailed => 'فشل في التحديث';
+
+  @override
+  String get anErrorOccurred => 'حدث خطأ';
+
+  @override
+  String get fullNameCannotBeEmpty => 'لا يمكن أن يكون الاسم فارغاً';
+
+  @override
+  String get authTokenNotFound =>
+      'لم يتم العثور على رمز المصادقة. يرجى تسجيل الدخول مرة أخرى.';
+
+  @override
+  String get authTokenNotFoundShort => 'لم يتم العثور على رمز المصادقة.';
+
+  @override
+  String get failedToLoadProfile => 'فشل في تحميل الملف الشخصي';
+
+  @override
+  String get failedToUpdateProfile => 'فشل في تحديث الملف الشخصي';
+
+  @override
+  String get failedToPickImage => 'فشل في اختيار الصورة';
+
+  @override
+  String get anErrorOccurredDuringUpdate => 'حدث خطأ أثناء التحديث';
+
+  @override
+  String get aboutUs => 'معلومات عنا';
+
+  @override
+  String get logout => 'تسجيل الخروج';
+
+  @override
+  String get contactUs => 'اتصل بنا';
+
+  @override
+  String get weAreHereToHelp => 'نحن هنا لمساعدتك!';
+
+  @override
+  String get arafatPhoneNumber => 'رقم هاتف عرفات';
+
+  @override
+  String get cannotLaunch => 'لا يمكن تشغيل';
 }

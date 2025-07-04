@@ -865,7 +865,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get imagesSubtitle => 'Vous pouvez joindre jusqu\'à 3 images';
 
   @override
-  String get camera => 'Caméra';
+  String get camera => 'Appareil photo';
 
   @override
   String get gallery => 'Galerie';
@@ -938,4 +938,135 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get lon => 'Lon';
+
+  @override
+  String get problemPrefix => 'Problème: ';
+
+  @override
+  String get complaintPrefix => 'Réclamation: ';
+
+  @override
+  String get videoLoadError => 'Erreur chargement vidéo';
+
+  @override
+  String get audioLoadError => 'Erreur chargement audio';
+
+  @override
+  String get expandMap => 'Agrandir la carte';
+
+  @override
+  String get collapseMap => 'Réduire la carte';
+
+  @override
+  String get backTooltip => 'Retour';
+
+  @override
+  String get sectionDescription => 'Description';
+
+  @override
+  String get sectionVoiceNote => 'Note Vocale';
+
+  @override
+  String get sectionLocation => 'Emplacement';
+
+  @override
+  String get sectionVideo => 'Vidéo';
+
+  @override
+  String get sectionDocument => 'Document';
+
+  @override
+  String get sectionAdminComment => 'Commentaire Admin';
+
+  @override
+  String get reduceMap => 'Réduire la carte';
+
+  @override
+  String get enlargeMap => 'Agrandir la carte';
+
+  @override
+  String get myProfile => 'Mon Profil';
+
+  @override
+  String get editProfile => 'Modifier le Profil';
+
+  @override
+  String get edit => 'Modifier';
+
+  @override
+  String get save => 'Sauvegarder';
+
+  @override
+  String get error => 'Erreur';
+
+  @override
+  String get noProfileDataFound => 'Aucune donnée de profil trouvée.';
+
+  @override
+  String get personalInformation => 'Informations Personnelles';
+
+  @override
+  String get address => 'Adresse';
+
+  @override
+  String get phone => 'Téléphone';
+
+  @override
+  String get notDefined => 'Non défini';
+
+  @override
+  String get user => 'Utilisateur';
+
+  @override
+  String get removePicture => 'Supprimer la photo';
+
+  @override
+  String get profileUpdatedSuccessfully => 'Profil mis à jour avec succès !';
+
+  @override
+  String get updateFailed => 'Échec de la mise à jour';
+
+  @override
+  String get anErrorOccurred => 'Une erreur s\'est produite';
+
+  @override
+  String get fullNameCannotBeEmpty => 'Le nom ne peut pas être vide';
+
+  @override
+  String get authTokenNotFound =>
+      'Token d\'authentification non trouvé. Veuillez vous reconnecter.';
+
+  @override
+  String get authTokenNotFoundShort => 'Token d\'authentification non trouvé.';
+
+  @override
+  String get failedToLoadProfile => 'Échec du chargement du profil';
+
+  @override
+  String get failedToUpdateProfile => 'Échec de la mise à jour du profil';
+
+  @override
+  String get failedToPickImage => 'Échec de la sélection de l\'image';
+
+  @override
+  String get anErrorOccurredDuringUpdate =>
+      'Une erreur s\'est produite lors de la mise à jour';
+
+  @override
+  String get aboutUs => 'À propos de nous';
+
+  @override
+  String get logout => 'Se déconnecter';
+
+  @override
+  String get contactUs => 'Nous Contacter';
+
+  @override
+  String get weAreHereToHelp => 'Nous sommes là pour vous aider !';
+
+  @override
+  String get arafatPhoneNumber => 'Numéro de téléphone d\'Arafat';
+
+  @override
+  String get cannotLaunch => 'Impossible de lancer';
 }

@@ -9,7 +9,7 @@ import 'auth/auth_screen.dart';
 class VerificationScreen extends StatefulWidget {
   final String phoneNumber;
   final String language; // Add language parameter
-  final String baseUrl = "http://192.168.137.1:8000/api";
+  final String baseUrl = "http://192.168.151.228:8000/api";
 
   const VerificationScreen({
     Key? key,
@@ -65,7 +65,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
           await Future.delayed(const Duration(seconds: 1));
           if (mounted) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const AuthScreen()),
+              MaterialPageRoute(
+                  builder: (context) => AuthScreen(
+                      selectedLanguage:
+                          widget.language)), // Pass selectedLanguage
             );
           }
         } else {
