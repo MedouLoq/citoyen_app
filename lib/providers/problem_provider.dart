@@ -36,7 +36,7 @@ class ProblemProvider with ChangeNotifier {
     notifyListeners();
 
     const String baseUrl =
-        'http://192.168.130.228:8000'; // Replace with your base URL
+        'http://192.168.185.228:8000'; // Replace with your base URL
 
     final token = await _getToken();
 
@@ -80,7 +80,7 @@ class ProblemProvider with ChangeNotifier {
     notifyListeners();
 
     const String baseUrl =
-        'http://192.168.130.228:8000'; // Replace with your base URL
+        'http://192.168.185.228:8000'; // Replace with your base URL
 
     final token = await _getToken();
 
@@ -128,7 +128,7 @@ class ProblemProvider with ChangeNotifier {
     notifyListeners();
 
     const String baseUrl =
-        'http://192.168.130.228:8000'; // Replace with your base URL
+        'http://192.168.185.228:8000'; // Replace with your base URL
 
     final token = await _getToken();
 

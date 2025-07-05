@@ -9,7 +9,7 @@ import 'auth/auth_screen.dart';
 class VerificationScreen extends StatefulWidget {
   final String phoneNumber;
   final String language; // Add language parameter
-  final String baseUrl = "http://192.168.130.228:8000/api";
+  final String baseUrl = "http://192.168.185.228:8000/api";
 
   const VerificationScreen({
     Key? key,

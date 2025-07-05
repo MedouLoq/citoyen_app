@@ -456,9 +456,8 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          complaint['municipality']['name'] ??
-                              (localizations?.unknownMunicipality ??
-                                  'Municipalité inconnue'),
+                          _translateMunicipalityName(
+                              context, complaint['municipality']['name']),
                           style: GoogleFonts.inter(
                               fontSize: 15, color: colors.onSurface),
                         ),
@@ -897,8 +896,11 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
             _buildInfoRow(localizations?.addressLabel ?? 'Adresse',
                 citizen['address'], theme),
           if (citizen['municipality'] != null)
-            _buildInfoRow(localizations?.municipalityLabel ?? 'Municipalité',
-                citizen['municipality']['name'], theme),
+            _buildInfoRow(
+                localizations?.municipalityLabel ?? 'Municipalité',
+                _translateMunicipalityName(
+                    context, citizen['municipality']['name']),
+                theme),
         ],
       ),
       theme: theme,
@@ -932,5 +934,38 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen>
         ],
       ),
     );
+  }
+}
+
+String _translateMunicipalityName(
+    BuildContext context, String? municipalityName) {
+  final localizations = AppLocalizations.of(context);
+
+  if (municipalityName == null) {
+    return localizations?.unknownMunicipality ?? 'Municipalité inconnue';
+  }
+
+  // Map the exact 9 municipality names from database to localization keys
+  switch (municipalityName) {
+    case 'Riyadh':
+      return localizations?.riyadh ?? 'Riyadh';
+    case 'Araffat':
+      return localizations?.araffat ?? 'Araffat';
+    case 'El Mina':
+      return localizations?.elMina ?? 'El Mina';
+    case 'Sebkha':
+      return localizations?.sebkha ?? 'Sebkha';
+    case 'Toujounine':
+      return localizations?.toujounine ?? 'Toujounine';
+    case 'Dar Naim':
+      return localizations?.darNaim ?? 'Dar Naim';
+    case 'Teyarett':
+      return localizations?.teyarett ?? 'Teyarett';
+    case 'Ksar':
+      return localizations?.ksar ?? 'Ksar';
+    case 'Tevragh Zein':
+      return localizations?.tevraghZeina ?? 'Tevragh Zein';
+    default:
+      return municipalityName; // Return original name if no translation found
   }
 }

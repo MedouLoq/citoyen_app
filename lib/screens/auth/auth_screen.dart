@@ -11,6 +11,8 @@ import 'package:citoyen_app/widgets/custom_text_field.dart';
 import 'package:citoyen_app/screens/verification_screen_api.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 
+import 'package:citoyen_app/l10n/app_localizations.dart';
+
 class AuthScreen extends StatefulWidget {
   final String selectedLanguage;
 
@@ -113,7 +115,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _isLoading = true;
       });
 
-      const String apiUrl = 'http://192.168.130.228:8000/api/login/';
+      const String apiUrl = 'http://192.168.185.228:8000/api/login/';
 
       try {
         final response = await http
@@ -199,7 +201,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     try {
       final response = await http
           .post(
-            Uri.parse('http://192.168.130.228:8000/api/send-code/'),
+            Uri.parse('http://192.168.185.228:8000/api/send-code/'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'phone_number': phoneNumber,
@@ -223,7 +225,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _isLoading = true;
       });
 
-      const String apiUrl = 'http://192.168.130.228:8000/api/register/';
+      const String apiUrl = 'http://192.168.185.228:8000/api/register/';
 
       try {
         final response = await http
@@ -706,7 +708,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 try {
                   final res = await http
                       .get(Uri.parse(
-                          'http://192.168.130.228:8000/api/municipalities/'))
+                          'http://192.168.185.228:8000/api/municipalities/'))
                       .timeout(const Duration(seconds: 10));
                   if (res.statusCode == 200) {
                     final List data = jsonDecode(res.body);
@@ -722,7 +724,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 }
                 return <Map<String, dynamic>>[];
               },
-              itemAsString: (item) => item?['name'] ?? '',
+              itemAsString: (item) => item != null
+                  ? _translateMunicipalityName(context, item['name'])
+                  : '',
               compareFn: (a, b) => a != null && b != null && a['id'] == b['id'],
               selectedItem:
                   _selectedMunicipality, // Use the full object instead of creating a temporary one
@@ -859,5 +863,38 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+}
+
+String _translateMunicipalityName(
+    BuildContext context, String? municipalityName) {
+  final localizations = AppLocalizations.of(context);
+
+  if (municipalityName == null) {
+    return localizations?.unknownMunicipality ?? 'Municipalité inconnue';
+  }
+
+  // Map the exact 9 municipality names from database to localization keys
+  switch (municipalityName) {
+    case 'Riyadh':
+      return localizations?.riyadh ?? 'Riyadh';
+    case 'Araffat':
+      return localizations?.araffat ?? 'Araffat';
+    case 'El Mina':
+      return localizations?.elMina ?? 'El Mina';
+    case 'Sebkha':
+      return localizations?.sebkha ?? 'Sebkha';
+    case 'Toujounine':
+      return localizations?.toujounine ?? 'Toujounine';
+    case 'Dar Naim':
+      return localizations?.darNaim ?? 'Dar Naim';
+    case 'Teyarett':
+      return localizations?.teyarett ?? 'Teyarett';
+    case 'Ksar':
+      return localizations?.ksar ?? 'Ksar';
+    case 'Tevragh Zein':
+      return localizations?.tevraghZeina ?? 'Tevragh Zein';
+    default:
+      return municipalityName; // Return original name if no translation found
   }
 }

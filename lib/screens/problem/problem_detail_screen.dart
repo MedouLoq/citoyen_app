@@ -530,9 +530,8 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen>
                   children: [
                     if (problem['municipality'] != null)
                       Text(
-                        problem['municipality']['name'] ??
-                            (localizations?.unknownMunicipality ??
-                                'Municipalité inconnue'),
+                        _translateMunicipalityName(
+                            context, problem['municipality']['name']),
                         style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
@@ -1125,5 +1124,38 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen>
       default:
         return Icons.insert_drive_file_rounded;
     }
+  }
+}
+
+String _translateMunicipalityName(
+    BuildContext context, String? municipalityName) {
+  final localizations = AppLocalizations.of(context);
+
+  if (municipalityName == null) {
+    return localizations?.unknownMunicipality ?? 'Municipalité inconnue';
+  }
+
+  // Map the exact 9 municipality names from database to localization keys
+  switch (municipalityName) {
+    case 'Riyadh':
+      return localizations?.riyadh ?? 'Riyadh';
+    case 'Araffat':
+      return localizations?.araffat ?? 'Araffat';
+    case 'El Mina':
+      return localizations?.elMina ?? 'El Mina';
+    case 'Sebkha':
+      return localizations?.sebkha ?? 'Sebkha';
+    case 'Toujounine':
+      return localizations?.toujounine ?? 'Toujounine';
+    case 'Dar Naim':
+      return localizations?.darNaim ?? 'Dar Naim';
+    case 'Teyarett':
+      return localizations?.teyarett ?? 'Teyarett';
+    case 'Ksar':
+      return localizations?.ksar ?? 'Ksar';
+    case 'Tevragh Zein':
+      return localizations?.tevraghZeina ?? 'Tevragh Zein';
+    default:
+      return municipalityName; // Return original name if no translation found
   }
 }
