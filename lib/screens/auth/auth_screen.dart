@@ -115,7 +115,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _isLoading = true;
       });
 
-      const String apiUrl = 'http://192.168.185.228:8000/api/login/';
+      const String apiUrl = 'https://belediyti.pythonanywhere.com/api/login/';
 
       try {
         final response = await http
@@ -201,7 +201,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     try {
       final response = await http
           .post(
-            Uri.parse('http://192.168.185.228:8000/api/send-code/'),
+            Uri.parse('https://belediyti.pythonanywhere.com/api/send-code/'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'phone_number': phoneNumber,
@@ -225,7 +225,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _isLoading = true;
       });
 
-      const String apiUrl = 'http://192.168.185.228:8000/api/register/';
+      const String apiUrl =
+          'https://belediyti.pythonanywhere.com/api/register/';
 
       try {
         final response = await http
@@ -708,7 +709,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 try {
                   final res = await http
                       .get(Uri.parse(
-                          'http://192.168.185.228:8000/api/municipalities/'))
+                          'https://belediyti.pythonanywhere.com/api/municipalities/'))
                       .timeout(const Duration(seconds: 10));
                   if (res.statusCode == 200) {
                     final List data = jsonDecode(res.body);

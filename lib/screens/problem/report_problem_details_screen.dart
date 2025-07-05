@@ -685,7 +685,7 @@ class _ReportProblemDetailsScreenState extends State<ReportProblemDetailsScreen>
   Future<String?> _fetchMunicipalityId(
       String candidateName, double lat, double lon) async {
     const String baseUrl =
-        "http://192.168.185.228:8000"; // Ensure this is correct
+        "https://belediyti.pythonanywhere.com"; // Ensure this is correct
     final encodedName = Uri.encodeComponent(candidateName.trim());
     final url = Uri.parse(
         "$baseUrl/get_municipality_id/?name=$encodedName&lat=$lat&lon=$lon");
@@ -876,7 +876,7 @@ class _ReportProblemDetailsScreenState extends State<ReportProblemDetailsScreen>
 
     try {
       var uri = Uri.parse(
-          "http://192.168.185.228:8000/api/problems/report/"); // Ensure correct endpoint
+          "https://belediyti.pythonanywhere.com/api/problems/report/"); // Ensure correct endpoint
       var request = http.MultipartRequest("POST", uri);
       request.headers['Authorization'] = 'Token $authToken';
 

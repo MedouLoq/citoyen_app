@@ -52,7 +52,7 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     const String baseUrl =
-        'http://192.168.185.228:8000'; // Replace with your base URL
+        'https://belediyti.pythonanywhere.com'; // Replace with your base URL
 
     final token = await _getToken(); // Use helper function to get token
 
@@ -88,7 +88,7 @@ class DashboardProvider with ChangeNotifier {
         }
       }
 
-      const String API_BASE_URL = "http://192.168.185.228:8000";
+      const String API_BASE_URL = "https://belediyti.pythonanywhere.com";
       const String PROFILE_URL = "$API_BASE_URL/api/profile/";
       // Fetch user profile
 // Add this debug code in your Flutter app
